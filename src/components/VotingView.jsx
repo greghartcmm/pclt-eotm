@@ -1,16 +1,18 @@
 import { useState } from "react"
 import { ROSTER } from "../constants.js"
 import { castVoteToGithub } from "../github.js"
-import { Avatar, Card, Button, Banner, Note, Spinner } from "./UI.jsx"
+import { Avatar, Card, Button, Note, Spinner } from "./UI.jsx"
 import styles from "./VotingView.module.css"
 
 export default function VotingView({ voterName, monthKey, monthLabel, existingVote, onVoteCast }) {
-  const [picked, setPicked] = useState(null)
+  const [picked, setPicked] = useState(existingVote || null)
   const [status, setStatus] = useState("idle") // idle | submitting | done | error
   const [errorMsg, setErrorMsg] = useState("")
+  const [confirmedVote, setConfirmedVote] = useState(existingVote || null)
 
   const candidates = ROSTER.filter(n => n !== voterName)
-  const alreadyVoted = !!existingVote
+  const isChanging = !!confirmedVote
+  const hasNewPick = picked !== confirmedVote
 
   async function handleCast() {
     if (!picked || status === "submitting") return
@@ -19,19 +21,14 @@ export default function VotingView({ voterName, monthKey, monthLabel, existingVo
 
     let attempts = 0
     while (attempts < 3) {
-      const result = await castVoteToGithub(monthKey, voterName, picked)
+      const result = await castVoteToGithub(monthKey, voterName, picked, isChanging)
       if (result.success) {
+        setConfirmedVote(picked)
         setStatus("done")
         onVoteCast(picked)
         return
       }
-      if (result.alreadyVoted) {
-        setStatus("error")
-        setErrorMsg("It looks like your vote was already recorded.")
-        return
-      }
       if (result.conflict) {
-        // SHA conflict — retry with fresh read
         attempts++
         await new Promise(r => setTimeout(r, 400 * attempts))
         continue
@@ -44,29 +41,14 @@ export default function VotingView({ voterName, monthKey, monthLabel, existingVo
     setErrorMsg("Couldn't save your vote after several attempts. Please try again.")
   }
 
-  if (alreadyVoted) {
-    return (
-      <Card>
-        <Banner icon="✓">
-          <span>You've already voted for <strong>{existingVote}</strong> for {monthLabel}. Thanks, {voterName.split(" ")[0]}!</span>
-        </Banner>
-        <p className={styles.sub}>Results will be shared once voting closes.</p>
-      </Card>
-    )
+  function buttonLabel() {
+    if (!picked) return "Select someone to vote"
+    if (!isChanging) return `Cast vote for ${picked}`
+    if (!hasNewPick) return `Your vote: ${picked}`
+    return `Change vote to ${picked}`
   }
 
-  if (status === "done") {
-    return (
-      <Card className={styles.centerCard}>
-        <div className={styles.bigCheck}>✓</div>
-        <h2 className={styles.h2}>Vote recorded</h2>
-        <p className={styles.sub}>
-          Thanks, {voterName.split(" ")[0]}. Your vote for <strong>{picked}</strong> is in.
-          Results will be shared once voting closes.
-        </p>
-      </Card>
-    )
-  }
+  const showDone = status === "done"
 
   return (
     <Card>
@@ -75,30 +57,47 @@ export default function VotingView({ voterName, monthKey, monthLabel, existingVo
         <span className={styles.voterName}>Voting as <strong>{voterName}</strong></span>
       </div>
 
-      <h2 className={styles.h2}>Cast your vote</h2>
+      <h2 className={styles.h2}>
+        {isChanging ? "Change your vote" : "Cast your vote"}
+      </h2>
       <p className={styles.sub}>
-        Pick one teammate who made the biggest difference in {monthLabel}. You get one vote — and it can't go to yourself.
+        {isChanging
+          ? `You voted for ${confirmedVote}. Select someone below to change your vote.`
+          : `Pick one teammate who made the biggest difference in ${monthLabel}. You get one vote — and it can't go to yourself.`
+        }
       </p>
 
+      {showDone && (
+        <div className={styles.successBanner}>
+          <span className={styles.successIcon}>✓</span>
+          {isChanging && picked !== confirmedVote
+            ? `Vote updated — you're now voting for ${picked}.`
+            : `Vote recorded for ${picked}. Thanks, ${voterName.split(" ")[0]}!`
+          }
+        </div>
+      )}
+
       <div className={styles.grid}>
-        {candidates.map(name => (
-          <button
-            key={name}
-            className={`${styles.pick} ${picked === name ? styles.pickSelected : ""}`}
-            aria-pressed={picked === name}
-            onClick={() => setPicked(name)}
-            disabled={status === "submitting"}
-          >
-            <Avatar name={name} size={38} />
-            <span className={styles.nm}>{name}</span>
-            <span className={styles.chk} aria-hidden>✓</span>
-          </button>
-        ))}
+        {candidates.map(name => {
+          const isSelected = picked === name
+          const wasVoted = confirmedVote === name && !hasNewPick
+          return (
+            <button
+              key={name}
+              className={`${styles.pick} ${isSelected ? styles.pickSelected : ""}`}
+              aria-pressed={isSelected}
+              onClick={() => { setPicked(name); setStatus("idle"); setErrorMsg("") }}
+              disabled={status === "submitting"}
+            >
+              <Avatar name={name} size={38} />
+              <span className={styles.nm}>{name}</span>
+              <span className={styles.chk} aria-hidden>✓</span>
+            </button>
+          )
+        })}
       </div>
 
-      {status === "error" && (
-        <Note variant="magenta">{errorMsg}</Note>
-      )}
+      {status === "error" && <Note variant="magenta">{errorMsg}</Note>}
 
       {status === "submitting" ? (
         <Spinner />
@@ -107,10 +106,10 @@ export default function VotingView({ voterName, monthKey, monthLabel, existingVo
           <Button
             variant="primary"
             block
-            disabled={!picked}
+            disabled={!picked || !hasNewPick}
             onClick={handleCast}
           >
-            {picked ? `Cast vote for ${picked}` : "Select someone to vote"}
+            {buttonLabel()}
           </Button>
         </div>
       )}
