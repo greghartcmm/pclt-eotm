@@ -27,10 +27,9 @@ jobs:
 
       - name: Debug secrets
         run: |
-          echo "PIN length: ${#VITE_ADMIN_PIN}"
           echo "PAT length: ${#VITE_GH_WRITE_PAT}"
+          echo "PAT first 4: ${VITE_GH_WRITE_PAT:0:4}"
         env:
-          VITE_ADMIN_PIN: ${{ secrets.VITE_ADMIN_PIN }}
           VITE_GH_WRITE_PAT: ${{ secrets.VITE_GH_WRITE_PAT }}
 
       - name: Build
