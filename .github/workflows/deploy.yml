@@ -25,15 +25,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Debug secrets
-        run: |
-          echo "PAT length: ${#VITE_GH_WRITE_PAT}"
-          echo "PAT first 4: ${VITE_GH_WRITE_PAT:0:4}"
-        env:
-          VITE_GH_WRITE_PAT: ${{ secrets.VITE_GH_WRITE_PAT }}
-
       - name: Build
-        run: npm run build
+        run: |
+          echo "VITE_ADMIN_PIN=${VITE_ADMIN_PIN}" >> .env.local
+          echo "VITE_GH_WRITE_PAT=${VITE_GH_WRITE_PAT}" >> .env.local
+          npm run build
         env:
           VITE_ADMIN_PIN: ${{ secrets.VITE_ADMIN_PIN }}
           VITE_GH_WRITE_PAT: ${{ secrets.VITE_GH_WRITE_PAT }}
