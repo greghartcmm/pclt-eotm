@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react"
-import { ROSTER, ADMINS, previousMonthLabel, previousMonthKey } from "./constants.js"
+import { ROSTER, previousMonthLabel, previousMonthKey } from "./constants.js"
 import { fetchVotes } from "./github.js"
 import { FrameBar, Card, Note, Spinner } from "./components/UI.jsx"
 import VotingView from "./components/VotingView.jsx"
@@ -9,23 +9,23 @@ import styles from "./App.module.css"
 
 export default function App() {
   const [appState, setAppState] = useState("loading")
-  // loading | invalid-token | voter | no-token | error
+  // loading | voter | invalid-token | no-token | error | admin-pin | admin
   const [voterName, setVoterName] = useState(null)
   const [existingVote, setExistingVote] = useState(null)
   const [isAdminRoute, setIsAdminRoute] = useState(false)
-  const [adminUnlocked, setAdminUnlocked] = useState(false)
+  const [activeTab, setActiveTab] = useState("admin") // "admin" | "vote"
 
-  const monthKey = previousMonthKey()
+  const monthKey   = previousMonthKey()
   const monthLabel = previousMonthLabel()
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
-    const token = params.get("token")
-    const admin = params.get("admin")
+    const token  = params.get("token")
+    const admin  = params.get("admin")
 
     if (admin === "true") {
       setIsAdminRoute(true)
-      setAppState("done")
+      setAppState("admin-pin")
       return
     }
 
@@ -34,15 +34,12 @@ export default function App() {
       return
     }
 
-    init(token)
+    initVoter(token)
   }, [])
 
-  async function init(token) {
+  async function initVoter(token) {
     try {
-      const ghOwner = localStorage.getItem("pclt-eotm:gh-owner") || "greghartcmm"
-      const ghRepo = localStorage.getItem("pclt-eotm:gh-repo") || "pclt-eotm"
-
-      const { data } = await fetchVotes(ghOwner, ghRepo)
+      const { data } = await fetchVotes()
       const tokenMap = data["_tokens"] || {}
       const resolvedName = tokenMap[token]
 
@@ -52,12 +49,8 @@ export default function App() {
       }
 
       setVoterName(resolvedName)
-
       const monthVotes = data[monthKey] || {}
-      if (monthVotes[resolvedName]) {
-        setExistingVote(monthVotes[resolvedName])
-      }
-
+      if (monthVotes[resolvedName]) setExistingVote(monthVotes[resolvedName])
       setAppState("voter")
     } catch (e) {
       console.error(e)
@@ -65,33 +58,68 @@ export default function App() {
     }
   }
 
-  // --- Admin route ---
+  // ── Admin route ──────────────────────────────────────────────────────────
   if (isAdminRoute) {
-    if (!adminUnlocked) {
-      return (
-        <div className={styles.root}>
-          <FrameBar />
-          <div className={styles.wrap}>
-            <Header monthLabel={monthLabel} />
-            <PinGate onUnlock={() => setAdminUnlocked(true)} />
-            <footer className={styles.footer}>CoverMyMeds is a McKesson company.</footer>
-          </div>
-        </div>
-      )
-    }
+    const adminUrl = `${window.location.origin}${window.location.pathname}?admin=true`
+    const voteUrl  = `${window.location.origin}${window.location.pathname}`
+
     return (
       <div className={styles.root}>
         <FrameBar />
         <div className={styles.wrap}>
           <Header monthLabel={monthLabel} />
-          <AdminView />
+
+          {appState === "admin-pin" && (
+            <PinGate onUnlock={() => setAppState("admin")} />
+          )}
+
+          {appState === "admin" && (
+            <>
+              <div className={styles.tabBar}>
+                <button
+                  className={`${styles.tab} ${activeTab === "admin" ? styles.tabActive : ""}`}
+                  onClick={() => setActiveTab("admin")}
+                >
+                  Admin panel
+                </button>
+                <button
+                  className={`${styles.tab} ${activeTab === "vote" ? styles.tabActive : ""}`}
+                  onClick={() => setActiveTab("vote")}
+                >
+                  Voting page
+                </button>
+              </div>
+
+              {activeTab === "admin" && <AdminView />}
+
+              {activeTab === "vote" && (
+                <Card>
+                  <h2 className={styles.setupH2}>Voting page preview</h2>
+                  <p className={styles.setupSub}>
+                    The voting page is accessed via personalized links. Copy a voter link
+                    from the Admin panel to preview it, or share the admin URL below with
+                    the other admins.
+                  </p>
+                  <div className={styles.urlBlock}>
+                    <span className={styles.urlLabel}>Admin URL</span>
+                    <code className={styles.urlCode}>{adminUrl}</code>
+                  </div>
+                  <div className={styles.urlBlock} style={{ marginTop: 10 }}>
+                    <span className={styles.urlLabel}>Base app URL</span>
+                    <code className={styles.urlCode}>{voteUrl}</code>
+                  </div>
+                </Card>
+              )}
+            </>
+          )}
+
           <footer className={styles.footer}>CoverMyMeds is a McKesson company.</footer>
         </div>
       </div>
     )
   }
 
-  // --- Voter route ---
+  // ── Voter route ───────────────────────────────────────────────────────────
   return (
     <div className={styles.root}>
       <FrameBar />

@@ -76,3 +76,49 @@
   font-size: 12px;
   margin-top: 8px;
 }
+
+.tabBar {
+  display: flex;
+  gap: 4px;
+  border-bottom: 2px solid var(--line);
+  margin-bottom: 4px;
+}
+
+.tab {
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -2px;
+  padding: 10px 20px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--muted);
+  cursor: pointer;
+  transition: color .12s, border-color .12s;
+  border-radius: 6px 6px 0 0;
+}
+.tab:hover { color: var(--navy); }
+.tabActive { color: var(--magenta); border-bottom-color: var(--magenta); }
+
+.urlBlock {
+  background: var(--orange-tint);
+  border: 1px solid #F6DEC9;
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+.urlLabel {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+.urlCode {
+  font-family: monospace;
+  font-size: 13px;
+  color: var(--navy);
+  word-break: break-all;
+}
