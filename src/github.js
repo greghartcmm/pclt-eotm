@@ -1,9 +1,15 @@
 // GitHub API helpers for reading/writing votes.json
-// The PAT is stored in localStorage on admin machines only.
 
 const VOTES_PATH = "votes.json"
+const GH_OWNER   = "greghartcmm"
+const GH_REPO    = "pclt-eotm"
 
-function getConfig() {
+// Write PAT is injected at build time — never visible in source
+// Scoped to contents:write on this repo only
+const WRITE_PAT  = import.meta.env.VITE_GH_WRITE_PAT || ""
+
+// Admin PAT stored in localStorage (Greg only, for reset)
+function getAdminConfig() {
   const raw = localStorage.getItem("pclt-eotm:gh-config")
   if (!raw) return null
   try { return JSON.parse(raw) } catch { return null }
@@ -18,30 +24,17 @@ export function clearGithubConfig() {
 }
 
 export function hasGithubConfig() {
-  return !!getConfig()
+  return !!getAdminConfig()
 }
 
-// Fetch the current votes.json from the repo (raw, no auth needed if public)
-// Returns { data, sha } where data is the parsed JSON
-export async function fetchVotes(owner, repo) {
-  const cfg = getConfig()
-  const effectiveOwner = owner || cfg?.owner
-  const effectiveRepo = repo || cfg?.repo
-
-  if (!effectiveOwner || !effectiveRepo) throw new Error("GitHub repo not configured.")
-
-  const headers = { Accept: "application/vnd.github+json" }
-  if (cfg?.pat) headers["Authorization"] = `Bearer ${cfg.pat}`
-
+// Read votes.json — public, no auth needed
+export async function fetchVotes() {
   const res = await fetch(
-    `https://api.github.com/repos/${effectiveOwner}/${effectiveRepo}/contents/${VOTES_PATH}`,
-    { headers }
+    `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${VOTES_PATH}`,
+    { headers: { Accept: "application/vnd.github+json" } }
   )
 
-  if (res.status === 404) {
-    // File doesn't exist yet — return empty state
-    return { data: {}, sha: null }
-  }
+  if (res.status === 404) return { data: {}, sha: null }
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({}))
@@ -53,26 +46,30 @@ export async function fetchVotes(owner, repo) {
   return { data: JSON.parse(decoded), sha: json.sha }
 }
 
-// Write updated votes.json back to the repo
-// Requires PAT with contents:write
-export async function writeVotes(data, sha, message = "Update votes") {
-  const cfg = getConfig()
-  if (!cfg?.pat || !cfg?.owner || !cfg?.repo) {
-    throw new Error("GitHub config (owner, repo, PAT) required to write votes.")
+// Write votes.json — uses build-time PAT for voter writes,
+// or admin localStorage PAT for admin operations (reset)
+export async function writeVotes(data, sha, message = "Update votes", useAdminPat = false) {
+  let pat = WRITE_PAT
+
+  if (useAdminPat) {
+    const cfg = getAdminConfig()
+    if (!cfg?.pat) throw new Error("Admin PAT required.")
+    pat = cfg.pat
   }
 
-  const content = btoa(JSON.stringify(data, null, 2))
+  if (!pat) throw new Error("No write token available.")
 
+  const content = btoa(JSON.stringify(data, null, 2))
   const body = { message, content }
-  if (sha) body.sha = sha // required for update; omit for initial creation
+  if (sha) body.sha = sha
 
   const res = await fetch(
-    `https://api.github.com/repos/${cfg.owner}/${cfg.repo}/contents/${VOTES_PATH}`,
+    `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${VOTES_PATH}`,
     {
       method: "PUT",
       headers: {
         Accept: "application/vnd.github+json",
-        Authorization: `Bearer ${cfg.pat}`,
+        Authorization: `Bearer ${pat}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify(body),
@@ -87,44 +84,30 @@ export async function writeVotes(data, sha, message = "Update votes") {
   return res.json()
 }
 
-// Cast a single vote atomically:
-// 1. Read current votes.json (get SHA)
-// 2. Merge in the new vote
-// 3. Write back with SHA (GitHub rejects if file changed since read)
-// Returns { success, alreadyVoted, error }
+// Cast a vote atomically with SHA conflict retry
 export async function castVoteToGithub(monthKey, voterName, choice) {
-  const cfg = getConfig()
-  if (!cfg) return { success: false, error: "GitHub not configured." }
+  let attempts = 0
+  while (attempts < 3) {
+    try {
+      const { data, sha } = await fetchVotes()
 
-  try {
-    const { data, sha } = await fetchVotes()
+      if (data[monthKey]?.[voterName]) {
+        return { success: false, alreadyVoted: true }
+      }
 
-    // Guard: already voted this month
-    if (data[monthKey]?.[voterName]) {
-      return { success: false, alreadyVoted: true }
+      if (!data[monthKey]) data[monthKey] = {}
+      data[monthKey][voterName] = choice
+
+      await writeVotes(data, sha, `Vote: ${voterName} → ${choice} (${monthKey})`)
+      return { success: true }
+    } catch (err) {
+      if (err.message?.includes("409") || err.message?.toLowerCase().includes("conflict")) {
+        attempts++
+        await new Promise(r => setTimeout(r, 400 * attempts))
+        continue
+      }
+      return { success: false, error: err.message }
     }
-
-    // Merge vote
-    if (!data[monthKey]) data[monthKey] = {}
-    data[monthKey][voterName] = choice
-
-    await writeVotes(data, sha, `Vote: ${voterName} → ${choice} (${monthKey})`)
-    return { success: true }
-  } catch (err) {
-    // 409 = SHA conflict (two simultaneous writes) — caller should retry
-    if (err.message?.includes("409") || err.message?.toLowerCase().includes("conflict")) {
-      return { success: false, conflict: true, error: "Conflict — please try again." }
-    }
-    return { success: false, error: err.message }
   }
-}
-
-// Write token map for a given period (admin only)
-export async function writeTokens(tokens) {
-  const cfg = getConfig()
-  if (!cfg) throw new Error("GitHub not configured.")
-
-  const { data, sha } = await fetchVotes()
-  data["_tokens"] = { ...(data["_tokens"] || {}), ...tokens }
-  await writeVotes(data, sha, "Generate voter tokens")
+  return { success: false, error: "Couldn't save your vote after several attempts. Please try again." }
 }
