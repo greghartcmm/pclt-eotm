@@ -84,21 +84,27 @@ export async function writeVotes(data, sha, message = "Update votes", useAdminPa
   return res.json()
 }
 
-// Cast a vote atomically with SHA conflict retry
-export async function castVoteToGithub(monthKey, voterName, choice) {
+// Cast or update a vote atomically with SHA conflict retry
+// allowOverwrite=true means we're changing an existing vote
+export async function castVoteToGithub(monthKey, voterName, choice, allowOverwrite = false) {
   let attempts = 0
   while (attempts < 3) {
     try {
       const { data, sha } = await fetchVotes()
 
-      if (data[monthKey]?.[voterName]) {
+      // If not overwriting and already voted, block it
+      if (!allowOverwrite && data[monthKey]?.[voterName]) {
         return { success: false, alreadyVoted: true }
       }
 
       if (!data[monthKey]) data[monthKey] = {}
       data[monthKey][voterName] = choice
 
-      await writeVotes(data, sha, `Vote: ${voterName} → ${choice} (${monthKey})`)
+      const msg = allowOverwrite
+        ? `Change vote: ${voterName} → ${choice} (${monthKey})`
+        : `Vote: ${voterName} → ${choice} (${monthKey})`
+
+      await writeVotes(data, sha, msg)
       return { success: true }
     } catch (err) {
       if (err.message?.includes("409") || err.message?.toLowerCase().includes("conflict")) {
