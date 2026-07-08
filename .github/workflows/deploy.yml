@@ -25,10 +25,19 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Debug secrets
+        run: |
+          echo "PIN length: ${#VITE_ADMIN_PIN}"
+          echo "PAT length: ${#VITE_GH_WRITE_PAT}"
+        env:
+          VITE_ADMIN_PIN: ${{ secrets.VITE_ADMIN_PIN }}
+          VITE_GH_WRITE_PAT: ${{ secrets.VITE_GH_WRITE_PAT }}
+
       - name: Build
         run: npm run build
         env:
           VITE_ADMIN_PIN: ${{ secrets.VITE_ADMIN_PIN }}
+          VITE_GH_WRITE_PAT: ${{ secrets.VITE_GH_WRITE_PAT }}
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
