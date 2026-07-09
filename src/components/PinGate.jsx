@@ -26,10 +26,11 @@ export default function PinGate({ onUnlock }) {
       <div className={styles.lockIcon}>🔒</div>
       <h2 className={styles.h2}>Admin access</h2>
       <p className={styles.sub}>Enter your admin PIN to continue.</p>
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} autoComplete="off">
         <input
           className={`${styles.pinInput} ${error ? styles.pinError : ""}`}
           type="password"
+            autoComplete="new-password"
           inputMode="numeric"
           maxLength={8}
           value={pin}
