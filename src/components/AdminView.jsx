@@ -6,14 +6,12 @@ import ResultsView from "./ResultsView.jsx"
 import styles from "./AdminView.module.css"
 
 export default function AdminView({ monthKey, monthLabel }) {
-  const [tokens, setTokens]     = useState(null)
   const [votes, setVotes]       = useState(null)
   const [loading, setLoading]   = useState(false)
   const [error, setError]       = useState("")
   const [copied, setCopied]     = useState("")
   const [resetMsg, setResetMsg] = useState("")
 
-  // Pre-generated permanent tokens
   const TOKEN_MAP = {
     "Doug Bedell":      "610b5m6909576i23",
     "Miranda Delatore": "1u692h1t480h1z6h",
@@ -44,8 +42,7 @@ export default function AdminView({ monthKey, monthLabel }) {
   }
 
   function voteLink(name) {
-    const token = TOKEN_MAP[name]
-    return `${window.location.origin}${window.location.pathname}?token=${token}`
+    return `${window.location.origin}${window.location.pathname}?token=${TOKEN_MAP[name]}`
   }
 
   async function copyLink(name) {
@@ -76,57 +73,58 @@ export default function AdminView({ monthKey, monthLabel }) {
   }
 
   return (
-    <div>
-      {/* Voter links */}
-      <Card>
-        <h2 className={styles.h2}>Voter links — {monthLabel}</h2>
-        <p className={styles.sub}>
-          Send each person their unique link. Links are permanent — reuse every month.
-        </p>
-        <div className={styles.row}>
-          <Button variant="ghost" onClick={copyAll}>
-            {copied === "__all__" ? "✓ Copied all links" : "Copy all links"}
-          </Button>
-        </div>
+    <div className={styles.layout}>
+
+      {/* LEFT — Voter links */}
+      <Card className={styles.linksCard}>
+        <h2 className={styles.h2}>Voter links</h2>
+        <p className={styles.sub}>{monthLabel} — send each person their unique link.</p>
+        <Button variant="ghost" onClick={copyAll} className={styles.copyAllBtn}>
+          {copied === "__all__" ? "✓ Copied all" : "Copy all links"}
+        </Button>
         <div className={styles.tokenList}>
           {ROSTER.map(name => (
             <div key={name} className={styles.tokenRow}>
               <span className={styles.tokenName}>{name}</span>
               <button className={styles.copyBtn} onClick={() => copyLink(name)}>
-                {copied === name ? "✓ Copied" : "Copy link"}
+                {copied === name ? "✓ Copied" : "Copy"}
               </button>
             </div>
           ))}
         </div>
       </Card>
 
-      {/* Live results */}
-      <Card>
-        <h2 className={styles.h2}>Live results</h2>
-        <p className={styles.sub}>Only admins can see this until voting closes.</p>
-        <Button variant="ghost" onClick={loadResults} disabled={loading}>
-          Refresh results
-        </Button>
-        {loading && <Spinner />}
+      {/* RIGHT — Results + Reset in one card */}
+      <Card className={styles.resultsCard}>
+        <div className={styles.resultsHeader}>
+          <div>
+            <h2 className={styles.h2}>Live results</h2>
+            <p className={styles.sub}>Only admins can see this until voting closes.</p>
+          </div>
+          <div className={styles.headerActions}>
+            <Button variant="ghost" onClick={loadResults} disabled={loading}>
+              {loading ? "Loading…" : "Refresh"}
+            </Button>
+            <Button variant="danger" onClick={handleReset} disabled={loading}>
+              Reset votes
+            </Button>
+          </div>
+        </div>
+
         {error && <Note variant="magenta">{error}</Note>}
-      </Card>
-
-      {votes !== null && (
-        <ResultsView votes={votes} monthLabel={monthLabel} totalEligible={ROSTER.length} />
-      )}
-
-      {/* Reset */}
-      <Card>
-        <h2 className={styles.h2}>Reset voting</h2>
-        <p className={styles.sub}>
-          Clears all votes for {monthLabel} to start a fresh round.
-        </p>
         {resetMsg && <Note variant="cyan">{resetMsg}</Note>}
-        {error && <Note variant="magenta">{error}</Note>}
-        <Button variant="danger" onClick={handleReset} disabled={loading}>
-          Clear votes for {monthLabel}
-        </Button>
+        {loading && <Spinner />}
+
+        {votes !== null && (
+          <ResultsView
+            votes={votes}
+            monthLabel={monthLabel}
+            totalEligible={ROSTER.length}
+            bare
+          />
+        )}
       </Card>
+
     </div>
   )
 }

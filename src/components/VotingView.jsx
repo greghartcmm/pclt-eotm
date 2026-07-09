@@ -45,7 +45,7 @@ export default function VotingView({ voterName, monthKey, monthLabel, existingVo
         <span className={styles.voterName}>Voting as <strong>{voterName}</strong></span>
       </div>
 
-      <h2 className={styles.h2}>{isChanging ? "Change your vote" : "Cast your vote"}</h2>
+      <h2 className={styles.h2}>{isChanging ? "Change your vote" : `Welcome, ${voterName.split(" ")[0]} 👋`}</h2>
       <p className={styles.sub}>
         {isChanging
           ? `You voted for ${confirmedVote}. Select someone below to change your vote.`

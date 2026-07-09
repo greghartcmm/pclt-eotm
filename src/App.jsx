@@ -63,7 +63,7 @@ export default function App() {
     return (
       <div className={styles.root}>
         <FrameBar />
-        <div className={styles.wrap}>
+        <div className={styles.wrapAdmin}>
           <Header monthLabel={monthLabel} />
 
           {appState === "admin-pin" && (

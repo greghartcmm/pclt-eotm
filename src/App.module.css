@@ -122,3 +122,9 @@
   color: var(--navy);
   word-break: break-all;
 }
+
+.wrapAdmin {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 34px 20px 72px;
+}
