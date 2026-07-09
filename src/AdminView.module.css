@@ -1,0 +1,71 @@
+/* Two-column layout on desktop, single column on mobile */
+.layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 18px;
+  align-items: start;
+}
+
+@media (max-width: 680px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.rightCol {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Links card fills full height of left column */
+.linksCard {
+  height: 100%;
+}
+
+.h2 {
+  font-family: var(--serif);
+  font-weight: 700;
+  font-size: 20px;
+  margin: 0 0 4px;
+  color: var(--ink);
+}
+.sub { color: var(--muted); font-size: 13px; margin: 0 0 14px; }
+
+.copyAllBtn { margin-bottom: 10px; }
+
+.resultsHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 4px; }
+
+.tokenList { margin-top: 4px; }
+.tokenRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--line);
+}
+.tokenRow:last-child { border-bottom: 0; }
+.tokenName { font-weight: 700; font-size: 13px; flex: 1; }
+.copyBtn {
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--navy);
+  cursor: pointer;
+  padding: 4px 10px;
+  white-space: nowrap;
+  transition: background .12s;
+  flex: none;
+}
+.copyBtn:hover { background: var(--cyan-tint); }
