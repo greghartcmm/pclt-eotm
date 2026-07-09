@@ -150,12 +150,3 @@
   transition: background .15s ease;
 }
 .adminLink:hover { background: var(--cyan-tint); }
-
-.tagline {
-  font-size: 14px;
-  color: var(--muted);
-  margin-top: 8px;
-  max-width: 560px;
-  margin-left: auto;
-  margin-right: auto;
-}

@@ -25,7 +25,7 @@ export async function resolveToken(token) {
 export async function getExistingVote(monthKey, voterName) {
   const { data, error } = await supabase
     .from('votes')
-    .select('choice')
+    .select('choice, reason')
     .eq('month', monthKey)
     .eq('voter_name', voterName)
     .single()
@@ -33,25 +33,28 @@ export async function getExistingVote(monthKey, voterName) {
   return data.choice
 }
 
-export async function castVote(monthKey, voterName, choice) {
+export async function castVote(monthKey, voterName, choice, reason = null) {
   const { error } = await supabase
     .from('votes')
     .upsert(
-      { month: monthKey, voter_name: voterName, choice },
+      { month: monthKey, voter_name: voterName, choice, reason: reason || null },
       { onConflict: 'month,voter_name' }
     )
   if (error) return { success: false, error: error.message }
   return { success: true }
 }
 
+// Returns { voter_name, choice, reason } rows for a month
 export async function getVotes(monthKey) {
   const { data, error } = await supabase
     .from('votes')
-    .select('voter_name, choice')
+    .select('voter_name, choice, reason')
     .eq('month', monthKey)
   if (error) return {}
   const result = {}
-  data.forEach(row => { result[row.voter_name] = row.choice })
+  data.forEach(row => {
+    result[row.voter_name] = { choice: row.choice, reason: row.reason || null }
+  })
   return result
 }
 
@@ -71,7 +74,6 @@ export async function getWinnerHistory(currentMonthKey) {
 
   if (error || !data) return []
 
-  // Group votes by month
   const byMonth = {}
   data.forEach(({ month, choice }) => {
     if (!byMonth[month]) byMonth[month] = {}

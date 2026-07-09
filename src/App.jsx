@@ -162,9 +162,6 @@ function Header({ monthLabel }) {
       <div className={styles.period}>
         Recognizing our teammate for <strong>{monthLabel}</strong>
       </div>
-      <div className={styles.tagline}>
-        Who picked up the tab, talked the team into a terrible idea, convinced Chrissy of a crazy idea, or did something vaguely worthy of this unserious but coveted award? Give them your vote!
-      </div>
     </header>
   )
 }
@@ -181,14 +178,14 @@ function AdminVotingLinks() {
         personalized links sent by email.
       </p>
       <div className={styles.adminLinkList}>
-        {Object.entries(ADMIN_TOKENS).map(([name, tok]) => (
-          <Button
+        {Object.entries(ADMIN_TOKENS).map(([name, token]) => (
+          <a
             key={name}
-            variant="ghost"
-            onClick={() => { window.location.href = `${base}?token=${tok}` }}
+            href={`${base}?token=${token}`}
+            className={styles.adminLink}
           >
             {name}
-          </Button>
+          </a>
         ))}
       </div>
     </Card>
