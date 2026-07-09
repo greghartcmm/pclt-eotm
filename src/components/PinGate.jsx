@@ -29,9 +29,10 @@ export default function PinGate({ onUnlock }) {
       <form onSubmit={handleSubmit} autoComplete="off">
         <input
           className={`${styles.pinInput} ${error ? styles.pinError : ""}`}
-          type="password"
-            autoComplete="new-password"
+          type="text"
           inputMode="numeric"
+          style={{ WebkitTextSecurity: "disc" }}
+          autoComplete="off"
           maxLength={8}
           value={pin}
           onChange={e => { setPin(e.target.value); setError(false) }}
