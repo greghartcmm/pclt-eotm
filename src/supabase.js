@@ -63,7 +63,7 @@ export async function clearVotes(monthKey) {
   if (error) throw new Error(error.message)
 }
 
-export async function getWinnerHistory() {
+export async function getWinnerHistory(currentMonthKey) {
   const { data, error } = await supabase
     .from('votes')
     .select('month, choice')
@@ -79,6 +79,7 @@ export async function getWinnerHistory() {
   })
 
   return Object.entries(byMonth)
+    .filter(([month]) => month !== currentMonthKey)
     .slice(0, 12)
     .map(([month, counts]) => {
       const max = Math.max(...Object.values(counts))
