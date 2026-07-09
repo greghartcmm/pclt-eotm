@@ -1,17 +1,8 @@
-/* Two-column layout on desktop, single column on mobile */
-.layout {
-  display: grid;
-  grid-template-columns: 1fr 1.4fr;
-  gap: 0 18px;
-  align-items: start;
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
 }
-
-@media (max-width: 680px) {
-  .layout { grid-template-columns: 1fr; }
-}
-
-.linksCard { position: sticky; top: 20px; }
-.resultsCard {}
 
 .h2 {
   font-family: var(--serif);
@@ -21,9 +12,9 @@
   color: var(--ink);
 }
 .sub { color: var(--muted); font-size: 13px; margin: 0 0 14px; }
+.empty { color: var(--muted); font-size: 14px; margin: 8px 0 0; }
 
-.copyAllBtn { margin-bottom: 10px; }
-
+/* Results header */
 .resultsHeader {
   display: flex;
   justify-content: space-between;
@@ -32,21 +23,114 @@
   margin-bottom: 8px;
   flex-wrap: wrap;
 }
+.headerActions { display: flex; gap: 8px; flex-wrap: wrap; flex: none; }
 
-.headerActions {
+/* Stats row */
+.stats { display: flex; gap: 24px; flex-wrap: wrap; margin-bottom: 18px; }
+.stat {}
+.statN { font-family: var(--serif); font-size: 28px; font-weight: 700; line-height: 1; color: var(--navy); }
+.statL { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; margin-top: 4px; }
+
+/* Candidate list */
+.candidateList { display: flex; flex-direction: column; }
+.candidateRow {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+}
+.candidateRow:last-child { border-bottom: 0; }
+.candidateLead {}
+
+.candidateTop {
   display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+.candidateName {
+  font-weight: 700;
+  font-size: 15px;
+  flex: 1;
+  color: var(--ink);
+}
+.crown { color: var(--magenta); }
+.candidateCount {
+  font-size: 13px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
   flex: none;
 }
 
+/* Anonymous reason quotes */
+.reasonList {
+  margin-top: 6px;
+  margin-left: 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.reasonItem {
+  font-size: 13px;
+  color: var(--muted);
+  font-style: italic;
+  line-height: 1.4;
+}
+
+/* Winner history */
+.historyList { display: flex; flex-direction: column; }
+.historyRow {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--line);
+}
+.historyRow:last-child { border-bottom: 0; }
+.historyMonth { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+.historyWinner { font-size: 15px; line-height: 1.3; }
+.winnerName { color: var(--magenta); }
+.historySep { color: var(--muted); }
+.historyMeta { font-size: 12px; color: var(--muted); }
+
+/* Voter links — collapsible */
+.linksHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  cursor: pointer;
+  user-select: none;
+}
+.collapseBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  color: var(--muted);
+  flex: none;
+  margin-top: 2px;
+}
+.chevron { display: inline-block; font-size: 18px; transition: transform .2s ease; color: var(--muted); }
+.chevronOpen { transform: rotate(180deg); }
+
+/* On desktop, links body always visible */
+.linksBody { display: block; }
+
+/* On mobile, collapsed by default */
+@media (max-width: 680px) {
+  .linksBody { display: none; }
+  .linksBodyOpen { display: block; }
+  .collapseBtn { display: flex; }
+}
+/* On desktop, hide the collapse button */
+@media (min-width: 681px) {
+  .collapseBtn { display: none; }
+}
+
+.copyAllBtn { margin-bottom: 10px; }
 .tokenList { margin-top: 4px; }
 .tokenRow {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 9px 0;
+  gap: 8px;
+  padding: 8px 0;
   border-bottom: 1px solid var(--line);
 }
 .tokenRow:last-child { border-bottom: 0; }
@@ -67,59 +151,11 @@
 }
 .copyBtn:hover { background: var(--cyan-tint); }
 
-/* Right column wrapper (results + history stacked) */
-.rightCol {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-}
-
-/* Voted / pending status pills in voter links */
 .votedPill {
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: .06em;
-  color: #1a7a4a;
-  background: #e6f4ed;
-  border-radius: 20px;
-  padding: 2px 8px;
-  flex: none;
+  font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
+  color: #1a7a4a; background: #e6f4ed; border-radius: 20px; padding: 2px 8px; flex: none;
 }
 .pendingPill {
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: .06em;
-  color: var(--muted);
-  background: var(--orange-tint);
-  border-radius: 20px;
-  padding: 2px 8px;
-  flex: none;
+  font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
+  color: var(--muted); background: var(--orange-tint); border-radius: 20px; padding: 2px 8px; flex: none;
 }
-
-/* Winner history */
-.historyList {
-  display: flex;
-  flex-direction: column;
-}
-.historyRow {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: 11px 0;
-  border-bottom: 1px solid var(--line);
-}
-.historyRow:last-child { border-bottom: 0; }
-
-.historyMonth {
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: .08em;
-  color: var(--muted);
-}
-.historyWinner { font-size: 15px; line-height: 1.3; }
-.winnerName { color: var(--magenta); }
-.historySep { color: var(--muted); }
-.historyMeta { font-size: 12px; color: var(--muted); }
