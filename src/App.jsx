@@ -178,14 +178,14 @@ function AdminVotingLinks() {
         personalized links sent by email.
       </p>
       <div className={styles.adminLinkList}>
-        {Object.entries(ADMIN_TOKENS).map(([name, token]) => (
-          <a
+        {Object.entries(ADMIN_TOKENS).map(([name, tok]) => (
+          <Button
             key={name}
-            href={`${base}?token=${token}`}
-            className={styles.adminLink}
+            variant="ghost"
+            onClick={() => { window.location.href = `${base}?token=${tok}` }}
           >
             {name}
-          </a>
+          </Button>
         ))}
       </div>
     </Card>
