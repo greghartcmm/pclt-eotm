@@ -4,7 +4,7 @@ import { castVote } from "../supabase.js"
 import { Avatar, Card, Button, Note, Spinner } from "./UI.jsx"
 import styles from "./VotingView.module.css"
 
-export default function VotingView({ voterName, monthKey, monthLabel, existingVote, onVoteCast }) {
+export default function VotingView({ voterName, monthKey, monthLabel, existingVote, isClosed, onVoteCast }) {
   const [picked, setPicked]           = useState(existingVote || null)
   const [confirmedVote, setConfirmed] = useState(existingVote || null)
   const [status, setStatus]           = useState("idle")
@@ -13,6 +13,20 @@ export default function VotingView({ voterName, monthKey, monthLabel, existingVo
   const candidates  = ROSTER.filter(n => n !== voterName)
   const isChanging  = !!confirmedVote
   const hasNewPick  = picked !== confirmedVote
+
+  // ── Voting closed state ────────────────────────────────────────────────────
+  if (isClosed) {
+    return (
+      <Card>
+        <div className={styles.closedIcon}>🔒</div>
+        <h2 className={styles.h2}>Voting is closed</h2>
+        <p className={styles.sub}>
+          Voting for <strong>{monthLabel}</strong> closed on the 5th at 5pm ET.
+          The next round opens soon — check back after the 5th!
+        </p>
+      </Card>
+    )
+  }
 
   async function handleCast() {
     if (!picked || status === "submitting") return

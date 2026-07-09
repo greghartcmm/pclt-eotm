@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react"
-import { ROSTER, previousMonthLabel, previousMonthKey } from "./constants.js"
+import { ROSTER, getVotingPeriod, ADMIN_TOKENS } from "./constants.js"
 import { resolveToken, getExistingVote } from "./supabase.js"
-import { FrameBar, Card, Note, Spinner } from "./components/UI.jsx"
+import { FrameBar, Card, Note, Spinner, Button } from "./components/UI.jsx"
 import VotingView from "./components/VotingView.jsx"
 import AdminView from "./components/AdminView.jsx"
 import PinGate from "./components/PinGate.jsx"
@@ -12,11 +12,9 @@ export default function App() {
   const [voterName, setVoterName] = useState(null)
   const [existingVote, setExistingVote] = useState(null)
   const [isAdminRoute, setIsAdminRoute] = useState(false)
-  const [adminUnlocked, setAdminUnlocked] = useState(false)
   const [activeTab, setActiveTab] = useState("admin")
 
-  const monthKey   = previousMonthKey()
-  const monthLabel = previousMonthLabel()
+  const { monthKey, monthLabel, isClosed } = getVotingPeriod()
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
@@ -48,8 +46,11 @@ export default function App() {
 
       setVoterName(name)
 
-      const existing = await getExistingVote(monthKey, name)
-      if (existing) setExistingVote(existing)
+      // Only fetch existing vote if voting is open (not closed)
+      if (!isClosed) {
+        const existing = await getExistingVote(monthKey, name)
+        if (existing) setExistingVote(existing)
+      }
 
       setAppState("voter")
     } catch (e) {
@@ -89,21 +90,7 @@ export default function App() {
 
               {activeTab === "admin" && <AdminView monthKey={monthKey} monthLabel={monthLabel} />}
 
-              {activeTab === "vote" && (
-                <Card>
-                  <h2 className={styles.setupH2}>Voting page</h2>
-                  <p className={styles.setupSub}>
-                    Share each person's unique link. Links are permanent and reused every month.
-                    The admin URL to share with Bridget and Megan:
-                  </p>
-                  <div className={styles.urlBlock}>
-                    <span className={styles.urlLabel}>Admin URL</span>
-                    <code className={styles.urlCode}>
-                      {`${window.location.origin}${window.location.pathname}?admin=true`}
-                    </code>
-                  </div>
-                </Card>
-              )}
+              {activeTab === "vote" && <AdminVotingLinks />}
             </>
           )}
 
@@ -154,6 +141,7 @@ export default function App() {
               monthKey={monthKey}
               monthLabel={monthLabel}
               existingVote={existingVote}
+              isClosed={isClosed}
               onVoteCast={(choice) => setExistingVote(choice)}
             />
           )}
@@ -175,5 +163,31 @@ function Header({ monthLabel }) {
         Recognizing our teammate for <strong>{monthLabel}</strong>
       </div>
     </header>
+  )
+}
+
+// ── Admin → Voting page tab: personal links for the 3 admins ─────────────────
+function AdminVotingLinks() {
+  const base = `${window.location.origin}${window.location.pathname}`
+
+  return (
+    <Card>
+      <h2 className={styles.setupH2}>Admin voting links</h2>
+      <p className={styles.setupSub}>
+        Click your link below to open your personal ballot. Other team members use their own
+        personalized links sent by email.
+      </p>
+      <div className={styles.adminLinkList}>
+        {Object.entries(ADMIN_TOKENS).map(([name, token]) => (
+          <a
+            key={name}
+            href={`${base}?token=${token}`}
+            className={styles.adminLink}
+          >
+            {name}
+          </a>
+        ))}
+      </div>
+    </Card>
   )
 }

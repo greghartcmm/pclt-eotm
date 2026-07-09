@@ -66,3 +66,60 @@
   flex: none;
 }
 .copyBtn:hover { background: var(--cyan-tint); }
+
+/* Right column wrapper (results + history stacked) */
+.rightCol {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* Voted / pending status pills in voter links */
+.votedPill {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: #1a7a4a;
+  background: #e6f4ed;
+  border-radius: 20px;
+  padding: 2px 8px;
+  flex: none;
+}
+.pendingPill {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--muted);
+  background: var(--orange-tint);
+  border-radius: 20px;
+  padding: 2px 8px;
+  flex: none;
+}
+
+/* Winner history */
+.historyList {
+  display: flex;
+  flex-direction: column;
+}
+.historyRow {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--line);
+}
+.historyRow:last-child { border-bottom: 0; }
+
+.historyMonth {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--muted);
+}
+.historyWinner { font-size: 15px; line-height: 1.3; }
+.winnerName { color: var(--magenta); }
+.historySep { color: var(--muted); }
+.historyMeta { font-size: 12px; color: var(--muted); }

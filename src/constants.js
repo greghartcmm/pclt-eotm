@@ -49,6 +49,75 @@ export function previousMonthKey() {
   return `${year}-${month}`
 }
 
+// ─── Auto-cutoff voting period ────────────────────────────────────────────────
+// Voting closes at 5pm ET on the 5th of each month for the prior month.
+// After cutoff, voting opens for the current month.
+//
+// Returns { monthKey, monthLabel, isClosed }
+// isClosed: true only in the window between month-end and the 5th at 5pm ET
+
+function isEDT(date) {
+  // EDT: second Sunday in March through first Sunday in November
+  const jan = new Date(date.getFullYear(), 0, 1).getTimezoneOffset()
+  const jul = new Date(date.getFullYear(), 6, 1).getTimezoneOffset()
+  return date.getTimezoneOffset() < Math.max(jan, jul)
+}
+
+export function getVotingPeriod() {
+  const now = new Date()
+  const etOffset = isEDT(now) ? -4 : -5
+  const nowET = new Date(now.getTime() + etOffset * 60 * 60 * 1000)
+
+  const day  = nowET.getUTCDate()
+  const hour = nowET.getUTCHours() // 17 = 5pm
+
+  const isPastCutoff = day > 5 || (day === 5 && hour >= 17)
+
+  // isClosed: we're before the cutoff (days 1–5 before 5pm) — prior month closed, current not open
+  const isClosed = !isPastCutoff
+
+  // Which month are we voting for?
+  const target = new Date(nowET)
+  target.setUTCDate(1)
+  if (!isPastCutoff) {
+    // Still in grace window — voting is for prior month (but closed)
+    target.setUTCMonth(target.getUTCMonth() - 1)
+  }
+  // After cutoff — voting for current month
+
+  const year  = target.getUTCFullYear()
+  const month = String(target.getUTCMonth() + 1).padStart(2, "0")
+  const monthKey   = `${year}-${month}`
+  const monthLabel = target.toLocaleDateString("en-US", { month: "long", year: "numeric", timeZone: "UTC" })
+
+  return { monthKey, monthLabel, isClosed }
+}
+
+// ─── Token map ────────────────────────────────────────────────────────────────
+// Single source of truth for voter tokens. Also stored in Supabase `tokens` table.
+
+export const TOKEN_MAP = {
+  "Doug Bedell":      "610b5m6909576i23",
+  "Miranda Delatore": "1u692h1t480h1z6h",
+  "Nicole Eckl":      "0a2k59070s3a6o0r",
+  "Lauren Fields":    "4w360h313p2o3w33",
+  "Chrissy Hand":     "3a3t46344z4q226b",
+  "Greg Hart":        "59485o351k0o594u",
+  "Jen Miesse":       "3k211u6x6h3s2c00",
+  "John Priskorn":    "634q1k551s4w665c",
+  "Bridget Readey":   "563046285n4p0e6m",
+  "Bill Sicheneder":  "3f2u660b0e0h380t",
+  "Mike Waldman":     "4h6m4i39282w6l1e",
+  "Megan Wetzel":     "5m640x6v6p4t6726",
+}
+
+// Admin names → their voter tokens (subset of TOKEN_MAP)
+export const ADMIN_TOKENS = {
+  "Bridget Readey": "563046285n4p0e6m",
+  "Greg Hart":      "59485o351k0o594u",
+  "Megan Wetzel":   "5m640x6v6p4t6726",
+}
+
 // Generate a cryptographically random token
 export function generateToken() {
   const arr = new Uint8Array(12)

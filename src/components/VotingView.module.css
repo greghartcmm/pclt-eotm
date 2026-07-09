@@ -92,3 +92,10 @@
   color: #22c55e;
   flex: none;
 }
+
+/* Voting closed state */
+.closedIcon {
+  font-size: 40px;
+  text-align: center;
+  margin-bottom: 12px;
+}

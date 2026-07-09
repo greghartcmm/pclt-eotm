@@ -186,6 +186,38 @@ export async function getWinnerHistory() {
 
 ---
 
+---
+
+## Feature 3: Admin Voting Page Tab — Personal Links
+
+### Problem
+When an admin clicks the "Voting page" tab from the admin panel, they see a "no voting link detected" error because the admin URL (`?admin=true`) has no token attached.
+
+### Solution (Option C)
+Replace the current "Voting page" tab content with a card that displays each admin's personal voting link directly. Since they're past the PIN gate they're trusted — surface their links right there so they can click through.
+
+### Business Rules
+- Only show links for the 3 admins: Bridget Readey, Greg Hart, Megan Wetzel
+- Each link opens in the same tab
+- Clicking navigates to their voter ballot with token pre-loaded
+
+### UI Spec
+Each admin sees three buttons — one per admin — styled as ghost buttons linking to their voter URL. Below the buttons a small note explains other team members use their own personalized links.
+
+### Files to Change
+
+| File | Change |
+|------|--------|
+| `src/constants.js` | Move TOKEN_MAP here from AdminView so both App.jsx and AdminView can import it |
+| `src/App.jsx` | Replace Voting page tab content with admin personal links card using TOKEN_MAP |
+| `src/components/AdminView.jsx` | Import TOKEN_MAP from constants.js instead of defining it inline |
+
+### Implementation Notes
+- TOKEN_MAP moved to `constants.js` as an exported const
+- Links are `<a href={voteLink}>` using same origin/pathname as admin URL
+- Use existing ghost button styles
+- Only show the 3 admin entries (Bridget Readey, Greg Hart, Megan Wetzel), not all 12
+
 ## How to Implement
 
 Tell Claude: *"Please implement the pending changes in PENDING_CHANGES.md into the React app."*
@@ -210,3 +242,6 @@ git push origin main
 - [ ] Ties show both names
 - [ ] History limited to 12 months
 - [ ] Mobile layout still stacks correctly
+- [ ] Admin "Voting page" tab shows 3 personal links, not error
+- [ ] Clicking an admin link opens correct ballot with token
+- [ ] Non-admin voters are unaffected

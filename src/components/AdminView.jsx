@@ -1,33 +1,23 @@
-import { useState, useEffect } from "react"
-import { ROSTER, previousMonthKey, previousMonthLabel } from "../constants.js"
-import { getVotes, clearVotes } from "../supabase.js"
+import { useState, useEffect, useCallback } from "react"
+import { ROSTER, TOKEN_MAP } from "../constants.js"
+import { getVotes, clearVotes, getWinnerHistory } from "../supabase.js"
 import { Card, Button, Note, Spinner } from "./UI.jsx"
 import ResultsView from "./ResultsView.jsx"
 import styles from "./AdminView.module.css"
 
 export default function AdminView({ monthKey, monthLabel }) {
-  const [votes, setVotes]       = useState(null)
-  const [loading, setLoading]   = useState(false)
-  const [error, setError]       = useState("")
-  const [copied, setCopied]     = useState("")
-  const [resetMsg, setResetMsg] = useState("")
+  const [votes, setVotes]         = useState(null)
+  const [loading, setLoading]     = useState(false)
+  const [error, setError]         = useState("")
+  const [copied, setCopied]       = useState("")
+  const [resetMsg, setResetMsg]   = useState("")
+  const [history, setHistory]     = useState(null)  // null = loading
+  const [historyErr, setHistoryErr] = useState(false)
 
-  const TOKEN_MAP = {
-    "Doug Bedell":      "610b5m6909576i23",
-    "Miranda Delatore": "1u692h1t480h1z6h",
-    "Nicole Eckl":      "0a2k59070s3a6o0r",
-    "Lauren Fields":    "4w360h313p2o3w33",
-    "Chrissy Hand":     "3a3t46344z4q226b",
-    "Greg Hart":        "59485o351k0o594u",
-    "Jen Miesse":       "3k211u6x6h3s2c00",
-    "John Priskorn":    "634q1k551s4w665c",
-    "Bridget Readey":   "563046285n4p0e6m",
-    "Bill Sicheneder":  "3f2u660b0e0h380t",
-    "Mike Waldman":     "4h6m4i39282w6l1e",
-    "Megan Wetzel":     "5m640x6v6p4t6726",
-  }
-
-  useEffect(() => { loadResults() }, [])
+  useEffect(() => {
+    loadResults()
+    loadHistory()
+  }, [])
 
   async function loadResults() {
     setLoading(true)
@@ -40,6 +30,14 @@ export default function AdminView({ monthKey, monthLabel }) {
     }
     setLoading(false)
   }
+
+  const loadHistory = useCallback(async () => {
+    setHistoryErr(false)
+    setHistory(null)
+    const data = await getWinnerHistory()
+    if (!data) setHistoryErr(true)
+    else setHistory(data)
+  }, [])
 
   function voteLink(name) {
     return `${window.location.origin}${window.location.pathname}?token=${TOKEN_MAP[name]}`
@@ -72,6 +70,9 @@ export default function AdminView({ monthKey, monthLabel }) {
     setLoading(false)
   }
 
+  // Determine who has voted this month
+  const votedSet = new Set(votes ? Object.keys(votes) : [])
+
   return (
     <div className={styles.layout}>
 
@@ -86,6 +87,11 @@ export default function AdminView({ monthKey, monthLabel }) {
           {ROSTER.map(name => (
             <div key={name} className={styles.tokenRow}>
               <span className={styles.tokenName}>{name}</span>
+              {votes !== null && (
+                <span className={votedSet.has(name) ? styles.votedPill : styles.pendingPill}>
+                  {votedSet.has(name) ? "voted" : "pending"}
+                </span>
+              )}
               <button className={styles.copyBtn} onClick={() => copyLink(name)}>
                 {copied === name ? "✓ Copied" : "Copy"}
               </button>
@@ -94,37 +100,78 @@ export default function AdminView({ monthKey, monthLabel }) {
         </div>
       </Card>
 
-      {/* RIGHT — Results + Reset in one card */}
-      <Card className={styles.resultsCard}>
-        <div className={styles.resultsHeader}>
-          <div>
-            <h2 className={styles.h2}>Live results</h2>
-            <p className={styles.sub}>Only admins can see this until voting closes.</p>
+      {/* RIGHT — Results + History */}
+      <div className={styles.rightCol}>
+
+        {/* Live results */}
+        <Card className={styles.resultsCard}>
+          <div className={styles.resultsHeader}>
+            <div>
+              <h2 className={styles.h2}>Live results</h2>
+              <p className={styles.sub}>Only admins can see this until voting closes.</p>
+            </div>
+            <div className={styles.headerActions}>
+              <Button variant="ghost" onClick={loadResults} disabled={loading}>
+                {loading ? "Loading…" : "Refresh"}
+              </Button>
+              <Button variant="danger" onClick={handleReset} disabled={loading}>
+                Reset votes
+              </Button>
+            </div>
           </div>
-          <div className={styles.headerActions}>
-            <Button variant="ghost" onClick={loadResults} disabled={loading}>
-              {loading ? "Loading…" : "Refresh"}
-            </Button>
-            <Button variant="danger" onClick={handleReset} disabled={loading}>
-              Reset votes
-            </Button>
+
+          {error && <Note variant="magenta">{error}</Note>}
+          {resetMsg && <Note variant="cyan">{resetMsg}</Note>}
+          {loading && <Spinner />}
+
+          {votes !== null && (
+            <ResultsView
+              votes={votes}
+              monthLabel={monthLabel}
+              totalEligible={ROSTER.length}
+              bare
+            />
+          )}
+        </Card>
+
+        {/* Winner history */}
+        <Card>
+          <div className={styles.resultsHeader}>
+            <div>
+              <h2 className={styles.h2}>Winner history</h2>
+              <p className={styles.sub}>Last 12 months, most recent first.</p>
+            </div>
+            <Button variant="ghost" onClick={loadHistory}>Refresh</Button>
           </div>
-        </div>
 
-        {error && <Note variant="magenta">{error}</Note>}
-        {resetMsg && <Note variant="cyan">{resetMsg}</Note>}
-        {loading && <Spinner />}
+          {history === null && !historyErr && <Spinner />}
+          {historyErr && <Note variant="magenta">Failed to load history. Try refreshing.</Note>}
+          {history !== null && history.length === 0 && (
+            <p className={styles.sub}>No history yet — past months will appear here.</p>
+          )}
+          {history !== null && history.length > 0 && (
+            <div className={styles.historyList}>
+              {history.map(({ month, label, winners, voteCount, totalVotes }) => (
+                <div key={month} className={styles.historyRow}>
+                  <span className={styles.historyMonth}>{label}</span>
+                  <span className={styles.historyWinner}>
+                    {winners.map((w, i) => (
+                      <span key={w}>
+                        {i > 0 && <span className={styles.historySep}> & </span>}
+                        <strong className={styles.winnerName}>{w}</strong>
+                      </span>
+                    ))}
+                  </span>
+                  <span className={styles.historyMeta}>
+                    {voteCount} vote{voteCount === 1 ? "" : "s"}{winners.length > 1 ? " each" : ""} / {totalVotes} total
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
 
-        {votes !== null && (
-          <ResultsView
-            votes={votes}
-            monthLabel={monthLabel}
-            totalEligible={ROSTER.length}
-            bare
-          />
-        )}
-      </Card>
-
+      </div>
     </div>
   )
 }

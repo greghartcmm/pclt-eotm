@@ -62,3 +62,34 @@ export async function clearVotes(monthKey) {
     .eq('month', monthKey)
   if (error) throw new Error(error.message)
 }
+
+export async function getWinnerHistory() {
+  const { data, error } = await supabase
+    .from('votes')
+    .select('month, choice')
+    .order('month', { ascending: false })
+
+  if (error || !data) return []
+
+  // Group votes by month
+  const byMonth = {}
+  data.forEach(({ month, choice }) => {
+    if (!byMonth[month]) byMonth[month] = {}
+    byMonth[month][choice] = (byMonth[month][choice] || 0) + 1
+  })
+
+  return Object.entries(byMonth)
+    .slice(0, 12)
+    .map(([month, counts]) => {
+      const max = Math.max(...Object.values(counts))
+      const winners = Object.entries(counts)
+        .filter(([, c]) => c === max)
+        .map(([name]) => name)
+      const totalVotes = Object.values(counts).reduce((a, b) => a + b, 0)
+      const [year, mo] = month.split('-')
+      const label = new Date(+year, +mo - 1, 1).toLocaleDateString('en-US', {
+        month: 'long', year: 'numeric',
+      })
+      return { month, label, winners, voteCount: max, totalVotes }
+    })
+}
