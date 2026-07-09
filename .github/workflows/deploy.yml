@@ -29,6 +29,7 @@ jobs:
         run: |
           echo "VITE_ADMIN_PIN=${VITE_ADMIN_PIN}" >> .env.local
           echo "VITE_GH_WRITE_PAT=${VITE_GH_WRITE_PAT}" >> .env.local
+          cat .env.local
           npm run build
         env:
           VITE_ADMIN_PIN: ${{ secrets.VITE_ADMIN_PIN }}
