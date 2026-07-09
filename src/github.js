@@ -69,7 +69,7 @@ export async function writeVotes(data, sha, message = "Update votes", useAdminPa
       method: "PUT",
       headers: {
         Accept: "application/vnd.github+json",
-        Authorization: `Bearer ${pat}`,
+        Authorization: `token ${pat}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify(body),
