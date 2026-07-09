@@ -63,7 +63,7 @@ export default function VotingView({ voterName, monthKey, monthLabel, existingVo
       <p className={styles.sub}>
         {isChanging
           ? `You voted for ${confirmedVote}. Select someone below to change your vote.`
-          : `Who picked up the tab, talked the team into a terrible idea, convinced Chrissy of a crazy idea, or did something vaguely worthy of this unserious but coveted award? Give them your vote!`
+          : `Pick one teammate. You can't vote for yourself.`
         }
       </p>
 
