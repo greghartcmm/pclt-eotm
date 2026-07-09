@@ -26,14 +26,10 @@ jobs:
         run: npm ci
 
       - name: Build
-        run: |
-          echo "VITE_ADMIN_PIN=${VITE_ADMIN_PIN}" >> .env.local
-          echo "VITE_GH_WRITE_PAT=${VITE_GH_WRITE_PAT}" >> .env.local
-          cat .env.local
-          npm run build
+        run: npm run build
         env:
           VITE_ADMIN_PIN: ${{ secrets.VITE_ADMIN_PIN }}
-          VITE_GH_WRITE_PAT: ${{ secrets.VITE_GH_WRITE_PAT }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4

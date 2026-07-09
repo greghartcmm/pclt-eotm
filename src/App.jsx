@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react"
 import { ROSTER, previousMonthLabel, previousMonthKey } from "./constants.js"
-import { fetchVotes } from "./github.js"
+import { resolveToken, getExistingVote } from "./supabase.js"
 import { FrameBar, Card, Note, Spinner } from "./components/UI.jsx"
 import VotingView from "./components/VotingView.jsx"
 import AdminView from "./components/AdminView.jsx"
@@ -9,11 +9,11 @@ import styles from "./App.module.css"
 
 export default function App() {
   const [appState, setAppState] = useState("loading")
-  // loading | voter | invalid-token | no-token | error | admin-pin | admin
   const [voterName, setVoterName] = useState(null)
   const [existingVote, setExistingVote] = useState(null)
   const [isAdminRoute, setIsAdminRoute] = useState(false)
-  const [activeTab, setActiveTab] = useState("admin") // "admin" | "vote"
+  const [adminUnlocked, setAdminUnlocked] = useState(false)
+  const [activeTab, setActiveTab] = useState("admin")
 
   const monthKey   = previousMonthKey()
   const monthLabel = previousMonthLabel()
@@ -39,18 +39,18 @@ export default function App() {
 
   async function initVoter(token) {
     try {
-      const { data } = await fetchVotes()
-      const tokenMap = data["_tokens"] || {}
-      const resolvedName = tokenMap[token]
+      const name = await resolveToken(token)
 
-      if (!resolvedName || !ROSTER.includes(resolvedName)) {
+      if (!name || !ROSTER.includes(name)) {
         setAppState("invalid-token")
         return
       }
 
-      setVoterName(resolvedName)
-      const monthVotes = data[monthKey] || {}
-      if (monthVotes[resolvedName]) setExistingVote(monthVotes[resolvedName])
+      setVoterName(name)
+
+      const existing = await getExistingVote(monthKey, name)
+      if (existing) setExistingVote(existing)
+
       setAppState("voter")
     } catch (e) {
       console.error(e)
@@ -60,9 +60,6 @@ export default function App() {
 
   // ── Admin route ──────────────────────────────────────────────────────────
   if (isAdminRoute) {
-    const adminUrl = `${window.location.origin}${window.location.pathname}?admin=true`
-    const voteUrl  = `${window.location.origin}${window.location.pathname}`
-
     return (
       <div className={styles.root}>
         <FrameBar />
@@ -90,23 +87,20 @@ export default function App() {
                 </button>
               </div>
 
-              {activeTab === "admin" && <AdminView />}
+              {activeTab === "admin" && <AdminView monthKey={monthKey} monthLabel={monthLabel} />}
 
               {activeTab === "vote" && (
                 <Card>
-                  <h2 className={styles.setupH2}>Voting page preview</h2>
+                  <h2 className={styles.setupH2}>Voting page</h2>
                   <p className={styles.setupSub}>
-                    The voting page is accessed via personalized links. Copy a voter link
-                    from the Admin panel to preview it, or share the admin URL below with
-                    the other admins.
+                    Share each person's unique link. Links are permanent and reused every month.
+                    The admin URL to share with Bridget and Megan:
                   </p>
                   <div className={styles.urlBlock}>
                     <span className={styles.urlLabel}>Admin URL</span>
-                    <code className={styles.urlCode}>{adminUrl}</code>
-                  </div>
-                  <div className={styles.urlBlock} style={{ marginTop: 10 }}>
-                    <span className={styles.urlLabel}>Base app URL</span>
-                    <code className={styles.urlCode}>{voteUrl}</code>
+                    <code className={styles.urlCode}>
+                      {`${window.location.origin}${window.location.pathname}?admin=true`}
+                    </code>
                   </div>
                 </Card>
               )}
@@ -133,7 +127,6 @@ export default function App() {
               <h2 className={styles.setupH2}>No voting link detected</h2>
               <p className={styles.setupSub}>
                 To vote, use the personalized link sent to you by your PCLT admin.
-                Links look like: <code className={styles.code}>…?token=abc123</code>
               </p>
             </Card>
           )}
@@ -142,8 +135,7 @@ export default function App() {
             <Card>
               <h2 className={styles.setupH2}>Link not recognized</h2>
               <p className={styles.setupSub}>
-                This voting link isn't valid for {monthLabel}. Check that you used
-                the most recent link from your admin, or ask them to resend it.
+                This voting link isn't valid for {monthLabel}. Ask your admin to resend it.
               </p>
             </Card>
           )}
@@ -151,7 +143,7 @@ export default function App() {
           {appState === "error" && (
             <Card>
               <Note variant="magenta">
-                Something went wrong loading the app. Please try again or contact your admin.
+                Something went wrong. Please try again or contact your admin.
               </Note>
             </Card>
           )}
