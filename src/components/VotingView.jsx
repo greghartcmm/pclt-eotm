@@ -1,4 +1,4 @@
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { ROSTER } from "../constants.js"
 import { castVote } from "../supabase.js"
 import { Avatar, Card, Button, Note, Spinner } from "./UI.jsx"
@@ -6,14 +6,28 @@ import styles from "./VotingView.module.css"
 
 const VO_COLORS = ['#FF8F1C','#E70865','#01426A','#008AD8','#00B37E','#9B59B6']
 const VO_DIRS   = [[-36,-52],[-16,-62],[0,-65],[16,-62],[36,-52],[-54,-28],[-60,-6],[-54,16],[54,-28],[60,-6],[54,16],[-28,38],[0,48],[28,38]]
+const MAX_REASON = 80
+
+function useIsMobile() {
+  const [mobile, setMobile] = useState(() => window.innerWidth < 680)
+  useEffect(() => {
+    const fn = () => setMobile(window.innerWidth < 680)
+    window.addEventListener("resize", fn)
+    return () => window.removeEventListener("resize", fn)
+  }, [])
+  return mobile
+}
 
 export default function VotingView({ voterName, monthKey, monthLabel, existingVote, isClosed, onVoteCast }) {
-  const [picked, setPicked]       = useState(existingVote || null)
+  const [picked, setPicked]           = useState(existingVote || null)
   const [confirmedVote, setConfirmed] = useState(existingVote || null)
-  const [status, setStatus]       = useState("idle") // idle | submitting | error
-  const [errorMsg, setErrorMsg]   = useState("")
+  const [reason, setReason]           = useState("")
+  const [sheetOpen, setSheetOpen]     = useState(false)
+  const [status, setStatus]           = useState("idle")
+  const [errorMsg, setErrorMsg]       = useState("")
   const [overlayVisible, setOverlayVisible] = useState(false)
   const dismissTimer = useRef(null)
+  const isMobile = useIsMobile()
 
   const candidates = ROSTER.filter(n => n !== voterName)
   const isChanging = !!confirmedVote
@@ -32,13 +46,13 @@ export default function VotingView({ voterName, monthKey, monthLabel, existingVo
     )
   }
 
-  // ── Cast / change vote ───────────────────────────────────────────────────
-  async function handleCast() {
+  async function handleCast(reasonArg) {
     if (!picked || status === "submitting") return
     setStatus("submitting")
     setErrorMsg("")
+    setSheetOpen(false)
 
-    const result = await castVote(monthKey, voterName, picked)
+    const result = await castVote(monthKey, voterName, picked, reasonArg || null)
 
     if (result.success) {
       const choice = picked
@@ -54,8 +68,6 @@ export default function VotingView({ voterName, monthKey, monthLabel, existingVo
 
   function showOverlay(choice) {
     setOverlayVisible(true)
-
-    // Animate ballot drop + confetti via DOM after React renders overlay
     requestAnimationFrame(() => {
       const ballot  = document.getElementById("vo-ballot")
       const boxWrap = document.getElementById("vo-box-wrap")
@@ -86,9 +98,7 @@ export default function VotingView({ voterName, monthKey, monthLabel, existingVo
     })
 
     if (dismissTimer.current) clearTimeout(dismissTimer.current)
-    dismissTimer.current = setTimeout(() => {
-      setOverlayVisible(false)
-    }, 2600)
+    dismissTimer.current = setTimeout(() => setOverlayVisible(false), 2600)
   }
 
   function buttonLabel() {
@@ -100,76 +110,147 @@ export default function VotingView({ voterName, monthKey, monthLabel, existingVo
   }
 
   return (
-    <Card className={styles.voteCard}>
-      <div className={styles.voterBadge}>
-        <Avatar name={voterName} size={34} />
-        <span className={styles.voterName}>Voting as <strong>{voterName}</strong></span>
-      </div>
+    <>
+      <Card className={styles.voteCard}>
+        <div className={styles.voterBadge}>
+          <Avatar name={voterName} size={34} />
+          <span className={styles.voterName}>Voting as <strong>{voterName}</strong></span>
+        </div>
 
-      <h2 className={styles.h2}>{isChanging ? "Change your vote" : "Cast your vote"}</h2>
-      <p className={styles.sub}>
-        {isChanging
-          ? `You voted for ${confirmedVote}. Select someone below to change your vote.`
-          : "Pick one teammate. You can't vote for yourself."}
-      </p>
+        <h2 className={styles.h2}>{isChanging ? "Change your vote" : "Cast your vote"}</h2>
+        <p className={styles.sub}>
+          {isChanging
+            ? `You voted for ${confirmedVote}. Select someone below to change your vote.`
+            : "Pick one teammate. You can't vote for yourself."}
+        </p>
 
-      <div className={styles.grid}>
-        {candidates.map(name => (
-          <button
-            key={name}
-            className={`${styles.pick} ${picked === name ? styles.pickSelected : ""}`}
-            aria-pressed={picked === name}
-            onClick={() => setPicked(name)}
-            disabled={status === "submitting"}
-          >
-            <Avatar name={name} size={38} />
-            <span className={styles.nm}>{name}</span>
-            <span className={styles.chk} aria-hidden>✓</span>
-          </button>
-        ))}
-      </div>
+        <div className={styles.grid}>
+          {candidates.map(name => (
+            <button
+              key={name}
+              className={`${styles.pick} ${picked === name ? styles.pickSelected : ""}`}
+              aria-pressed={picked === name}
+              onClick={() => { setPicked(name); setReason("") }}
+              disabled={status === "submitting"}
+            >
+              <Avatar name={name} size={38} />
+              <span className={styles.nm}>{name}</span>
+              <span className={styles.chk} aria-hidden>✓</span>
+            </button>
+          ))}
+        </div>
 
-      {status === "error" && <Note variant="magenta">{errorMsg}</Note>}
-
-      <div className={styles.actions}>
-        {status === "submitting" ? (
-          <Spinner />
-        ) : (
-          <Button
-            variant="primary"
-            block
-            disabled={!picked || (isChanging && !hasNewPick)}
-            onClick={handleCast}
-          >
-            {buttonLabel()}
-          </Button>
+        {/* Desktop: inline reason field appears after picking */}
+        {!isMobile && picked && hasNewPick && (
+          <div className={styles.reasonSection}>
+            <div className={styles.reasonLabel}>
+              Why {picked.split(" ")[0]}?
+              <span className={styles.optionalPill}>optional</span>
+            </div>
+            <textarea
+              className={styles.reasonTextarea}
+              rows={3}
+              maxLength={MAX_REASON}
+              placeholder="She actually convinced Chrissy of something. We still don't know how."
+              value={reason}
+              onChange={e => setReason(e.target.value)}
+            />
+            <div className={styles.charCount}>{reason.length} / {MAX_REASON}</div>
+          </div>
         )}
-      </div>
 
-      {/* ── Ballot drop overlay ── */}
-      {overlayVisible && (
-        <div className={styles.voteOverlay}>
-          <div className={styles.voAnim}>
-            <div className={styles.voBallot} id="vo-ballot">
-              <div className={styles.voBl} />
-              <div className={styles.voBl} />
-              <div className={`${styles.voBl} ${styles.voBlAccent}`} />
+        {status === "error" && <Note variant="magenta">{errorMsg}</Note>}
+
+        {/* Desktop cast button */}
+        {!isMobile && (
+          status === "submitting" ? <Spinner /> : (
+            <div className={styles.actions}>
+              <Button
+                variant="primary"
+                block
+                disabled={!picked || (isChanging && !hasNewPick)}
+                onClick={() => handleCast(reason)}
+              >
+                {buttonLabel()}
+              </Button>
             </div>
-            <div className={styles.voConf} id="vo-conf" />
-            <div className={styles.voBoxWrap} id="vo-box-wrap">
-              <div className={styles.voSlot} />
-              <div className={styles.voBox}>&#128506;</div>
+          )
+        )}
+
+        {/* Mobile: button opens sheet; if no change, disabled */}
+        {isMobile && picked && hasNewPick && !sheetOpen && (
+          <div className={styles.actions}>
+            <Button variant="primary" block onClick={() => setSheetOpen(true)}>
+              {buttonLabel()}
+            </Button>
+          </div>
+        )}
+        {isMobile && (!picked || (isChanging && !hasNewPick)) && (
+          <div className={styles.actions}>
+            <Button variant="primary" block disabled>{buttonLabel()}</Button>
+          </div>
+        )}
+
+        {/* Ballot drop overlay */}
+        {overlayVisible && (
+          <div className={styles.voteOverlay}>
+            <div className={styles.voAnim}>
+              <div className={styles.voBallot} id="vo-ballot">
+                <div className={styles.voBl} />
+                <div className={styles.voBl} />
+                <div className={`${styles.voBl} ${styles.voBlAccent}`} />
+              </div>
+              <div className={styles.voConf} id="vo-conf" />
+              <div className={styles.voBoxWrap} id="vo-box-wrap">
+                <div className={styles.voSlot} />
+                <div className={styles.voBox}>&#128506;</div>
+              </div>
+            </div>
+            <div className={styles.voTitle}>Vote recorded</div>
+            <div className={styles.voSub}>
+              Thanks, {voterName.split(" ")[0]}. Your vote for <strong>{confirmedVote}</strong> is in.
+            </div>
+            <div className={styles.voProgress}>
+              <div className={styles.voProgressFill} id="vo-fill" />
             </div>
           </div>
-          <div className={styles.voTitle}>Vote recorded</div>
-          <div className={styles.voSub}>
-            Thanks, {voterName.split(" ")[0]}. Your vote for <strong>{confirmedVote}</strong> is in.
-          </div>
-          <div className={styles.voProgress}>
-            <div className={styles.voProgressFill} id="vo-fill" />
+        )}
+      </Card>
+
+      {/* Mobile bottom sheet */}
+      {isMobile && sheetOpen && (
+        <div className={styles.backdrop} onClick={() => setSheetOpen(false)}>
+          <div className={styles.sheet} onClick={e => e.stopPropagation()}>
+            <div className={styles.sheetHandle} />
+            <div className={styles.sheetWho}>
+              <Avatar name={picked} size={30} />
+              <span className={styles.sheetName}>{picked}</span>
+            </div>
+            <p className={styles.sheetPrompt}>
+              Why {picked.split(" ")[0]}?
+              <span className={styles.optionalPill}>optional</span>
+            </p>
+            <textarea
+              className={styles.reasonTextarea}
+              rows={3}
+              maxLength={MAX_REASON}
+              placeholder="She actually convinced Chrissy of something. We still don't know how."
+              value={reason}
+              onChange={e => setReason(e.target.value)}
+              autoFocus
+            />
+            <div className={styles.charCount}>{reason.length} / {MAX_REASON}</div>
+            <div className={styles.sheetActions}>
+              <Button variant="ghost" onClick={() => handleCast(null)} disabled={status === "submitting"}>
+                {status === "submitting" ? "Saving…" : "Skip"}
+              </Button>
+              <Button variant="primary" onClick={() => handleCast(reason)} disabled={status === "submitting"}>
+                {status === "submitting" ? "Saving…" : `Vote for ${picked.split(" ")[0]}`}
+              </Button>
+            </div>
           </div>
         </div>
       )}
-    </Card>
+    </>
   )
 }
