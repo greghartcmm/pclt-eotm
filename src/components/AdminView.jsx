@@ -70,7 +70,8 @@ export default function AdminView({ monthKey, monthLabel }) {
   const votedSet = new Set(votes ? Object.keys(votes) : [])
 
   return (
-    <div className={styles.stack}>
+    <div className={styles.layout}>
+      <div className={styles.leftCol}>
 
       {/* ── 1. Live results ── */}
       <Card>
@@ -171,6 +172,8 @@ export default function AdminView({ monthKey, monthLabel }) {
         )}
       </Card>
 
+      </div>
+      <div className={styles.rightCol}>
       {/* ── 3. Voter links (collapsible on mobile) ── */}
       <Card>
         <div className={styles.linksHeader} onClick={() => setLinksOpen(o => !o)}>
@@ -206,6 +209,7 @@ export default function AdminView({ monthKey, monthLabel }) {
         </div>
       </Card>
 
+      </div>
     </div>
   )
 }
