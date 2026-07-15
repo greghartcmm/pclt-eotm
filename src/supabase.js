@@ -66,33 +66,85 @@ export async function clearVotes(monthKey) {
   if (error) throw new Error(error.message)
 }
 
+export async function backupVotes(monthKey, votesObj) {
+  const votesArray = Object.entries(votesObj).map(([voter_name, { choice, reason }]) => ({
+    voter_name, choice, reason: reason || "",
+  }))
+  const { error } = await supabase
+    .from('vote_backups')
+    .upsert({ month: monthKey, reset_at: new Date().toISOString(), votes: votesArray }, { onConflict: 'month' })
+  if (error) throw new Error(error.message)
+}
+
+export async function getVoteBackup(monthKey) {
+  const { data, error } = await supabase
+    .from('vote_backups')
+    .select('*')
+    .eq('month', monthKey)
+    .single()
+  if (error || !data) return null
+  return data
+}
+
+export async function restoreVotesFromBackup(monthKey, backupVotesArr) {
+  const { error: delError } = await supabase.from('votes').delete().eq('month', monthKey)
+  if (delError) throw new Error(delError.message)
+  if (backupVotesArr.length === 0) return
+  const rows = backupVotesArr.map(({ voter_name, choice, reason }) => ({
+    month: monthKey, voter_name, choice, reason: reason || null,
+  }))
+  const { error } = await supabase.from('votes').insert(rows)
+  if (error) throw new Error(error.message)
+}
+
+export async function declareWinner(monthKey, winnerNames, featuredComment, voteCount, totalVotes) {
+  const { error } = await supabase
+    .from('winners')
+    .upsert({
+      month: monthKey,
+      winner_names: winnerNames,
+      featured_comment: featuredComment || null,
+      vote_count: voteCount,
+      total_votes: totalVotes,
+      declared_at: new Date().toISOString(),
+    }, { onConflict: 'month' })
+  if (error) throw new Error(error.message)
+}
+
+export async function getWinner(monthKey) {
+  const { data, error } = await supabase
+    .from('winners')
+    .select('*')
+    .eq('month', monthKey)
+    .single()
+  if (error || !data) return null
+  return {
+    month: data.month,
+    winners: data.winner_names,
+    featured_comment: data.featured_comment || null,
+    voteCount: data.vote_count,
+    totalVotes: data.total_votes,
+  }
+}
+
 export async function getWinnerHistory(currentMonthKey) {
   const { data, error } = await supabase
-    .from('votes')
-    .select('month, choice')
+    .from('winners')
+    .select('month, winner_names, featured_comment, vote_count, total_votes')
+    .neq('month', currentMonthKey)
     .order('month', { ascending: false })
-
+    .limit(12)
   if (error || !data) return []
-
-  const byMonth = {}
-  data.forEach(({ month, choice }) => {
-    if (!byMonth[month]) byMonth[month] = {}
-    byMonth[month][choice] = (byMonth[month][choice] || 0) + 1
+  return data.map(row => {
+    const [year, mo] = row.month.split('-')
+    const label = new Date(+year, +mo - 1, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+    return {
+      month: row.month,
+      label,
+      winners: row.winner_names,
+      voteCount: row.vote_count,
+      totalVotes: row.total_votes,
+      featuredComment: row.featured_comment || null,
+    }
   })
-
-  return Object.entries(byMonth)
-    .filter(([month]) => month !== currentMonthKey)
-    .slice(0, 12)
-    .map(([month, counts]) => {
-      const max = Math.max(...Object.values(counts))
-      const winners = Object.entries(counts)
-        .filter(([, c]) => c === max)
-        .map(([name]) => name)
-      const totalVotes = Object.values(counts).reduce((a, b) => a + b, 0)
-      const [year, mo] = month.split('-')
-      const label = new Date(+year, +mo - 1, 1).toLocaleDateString('en-US', {
-        month: 'long', year: 'numeric',
-      })
-      return { month, label, winners, voteCount: max, totalVotes }
-    })
 }

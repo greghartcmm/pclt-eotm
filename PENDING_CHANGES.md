@@ -1,247 +1,171 @@
-# PENDING_CHANGES.md
+# PCLT Employee of the Month — Pending Changes
 
-## Change Request: Auto Vote Cutoff + Winner History Panel
-
-**Requested by:** Greg Hart  
-**Status:** Pending implementation  
-**Priority:** High  
+> **Workflow:** Megan describes UI changes → Claude previews in the standalone HTML prototype → change is approved and logged here → Greg implements into the React app and deploys.
 
 ---
 
-## Overview
+## How to queue a change
 
-Two related features:
-1. Voting automatically closes at 5pm on the 5th of each month for the prior month
-2. Admin panel gains a winner history panel showing last 12 months
+1. Open this Claude Project and describe the change you want (see prompting tips below).
+2. Claude will update the HTML prototype so you can preview it live in the artifact.
+3. When you're happy with it, say **"Add this to PENDING_CHANGES.md"** and Claude will append a new entry below.
+4. Hand the updated `PENDING_CHANGES.md` to Greg. He'll implement each item into the React source and check it off.
 
 ---
 
-## Feature 1: Auto Vote Cutoff
+## Prompting tips for mockups
 
-### Business Rules
+The HTML prototype lives inside this project (`pclt-employee-of-the-month.html`). Claude can read it and render changes immediately.
 
-- Voting period covers the **prior completed month**
-- Voting closes at **5:00pm ET on the 5th of the current month**
-- Example: June 2026 voting closes at 5pm ET on July 5, 2026
-- At cutoff:
-  - Voters who open their link see the **new month's ballot** (July) with no vote selected
-  - Any vote cast after cutoff records under the **new month** in Supabase
-  - No votes can be changed or cast for the closed month
+**Good prompt patterns:**
 
-### Cutoff Logic
+| What you want | How to ask |
+|---|---|
+| Visual tweak | "On the voter page, make the candidate grid cards taller with more padding." |
+| New element | "Add a small banner below the header that says voting closes on the 5th." |
+| Behavior change | "When a candidate is selected, show their avatar larger in the reason section." |
+| Mobile-specific | "On mobile, show the voter badge as a slim pill at the very top of the page, not inside the card." |
+| Compare options | "Show me two versions of the vote confirmation overlay — one with confetti and one without." |
 
-The cutoff determination happens client-side using the user's local time converted to ET.
+**Tips:**
+- Be specific about *where* on the page the change lives (header, candidate grid, vote overlay, admin panel, etc.).
+- Mention whether it should be desktop-only, mobile-only, or both.
+- Reference the sim bar at the top to switch voter perspectives and the "View admin page" button to check admin-side changes.
+- You can ask for multiple small tweaks in one message — Claude will apply them all to the prototype at once.
 
-```js
-// Pseudocode
-function getCurrentVotingPeriod() {
-  const now = new Date()
-  // Convert to ET (UTC-5 standard, UTC-4 daylight)
-  const etOffset = isEDT(now) ? -4 : -5
-  const nowET = new Date(now.getTime() + (etOffset * 60 * 60 * 1000))
+---
 
-  const day = nowET.getUTCDate()
-  const hour = nowET.getUTCHours() // 17 = 5pm
+## Pending items
 
-  // If we're past the 5th at 5pm ET, voting is for the current month
-  // Otherwise voting is for the prior month
-  if (day > 5 || (day === 5 && hour >= 17)) {
-    // Vote for current month
-    return currentMonthKey() // e.g. "2026-07"
-  } else {
-    // Still voting for prior month
-    return previousMonthKey() // e.g. "2026-06"
-  }
-}
+> Items are listed oldest-first. Greg checks them off as they ship.
 
-function isEDT(date) {
-  // EDT runs second Sunday in March through first Sunday in November
-  // Can use Intl.DateTimeFormat to detect reliably
-  const jan = new Date(date.getFullYear(), 0, 1).getTimezoneOffset()
-  const jul = new Date(date.getFullYear(), 6, 1).getTimezoneOffset()
-  return date.getTimezoneOffset() < Math.max(jan, jul)
-}
+<!-- TEMPLATE — copy this block for each new change:
+
+### [Short title]
+- **Status:** Pending
+- **Description:** [What it is and why]
+- **Scope:** [voter page / admin page / both / mobile only / etc.]
+- **Design notes:** [Any specific colors, sizes, wording, or behavior details Greg needs]
+- **Approved by:** [Your name]
+- **Date queued:** [YYYY-MM-DD]
+
+-->
+
+### Reset votes — confirmation modal + Supabase backup
+- **Status:** Pending
+- **Description:** Replace the browser `confirm()` dialog with a styled in-page modal. Before clearing votes, snapshot the current votes into a `vote_backups` Supabase table (one row per month, overwritten on repeat resets). After reset, show an orange note callout in the Live Results card: *"A backup exists from [date] at [time] — [N] votes by [name], [name]…"* with a "Restore backup" button. Restore triggers its own confirmation modal, then upserts backup votes back into the `votes` table.
+- **Scope:** Admin page — Live Results card
+- **Design notes:**
+  - Confirmation modal: styled card/overlay (not `window.confirm`). Body: *"Clear all votes for [Month]? A backup will be saved and can be restored from this panel."* Actions: Cancel (ghost) / Reset (danger).
+  - Restore confirmation: *"Restore [N] votes from [date] at [time]? This will overwrite any votes cast since the reset."*
+  - Backup banner: `note-orange` style, only shown when a `vote_backups` row exists for `currentMonthKey`. No expiration — banner stays until the month rolls over naturally.
+  - Backup row is never deleted — keep it for the life of the month.
+- **Supabase:** Requires new `vote_backups` table — see Supabase section below.
+- **Approved by:** Greg Hart
+- **Date queued:** 2026-07-15
+
+---
+
+### Declare winner — modal with comment picker
+- **Status:** Pending
+- **Description:** Add a "Declare winner" button to the Live Results card header actions (alongside Refresh and Reset). Button is disabled (or hidden) while voting is still open; enabled only after the cutoff (5th at 5pm ET). Clicking opens a two-step modal: step 1 selects the winner (pre-populated with current leader; ties show both with a co-winner note, admin can deselect one); step 2 shows selectable comment cards for that winner (one per submitted reason), optional — skip if no comments exist. On confirm, writes to the `winners` Supabase table. Button label changes to "Edit winner" if a winner is already declared for the current month.
+- **Scope:** Admin page — Live Results card
+- **Design notes:**
+  - Winner selection: same card/checkbox style as candidate pick grid (magenta border when selected).
+  - Comment picker: selectable cards, magenta border on selection, "None" option to store no comment. Only shows comments for the selected winner.
+  - For co-winners: one shared `featured_comment` for the entry (not one per person). Show merged comment pool from all co-winners in the picker.
+  - Modal is two visually distinct steps, not two separate modals — step 1 and step 2 stack vertically inside the same modal as winner is selected.
+- **Supabase:** Requires new `winners` table — see Supabase section below.
+- **Implementation note:** As part of this item, `getWinnerHistory` in `supabase.js` must be rewritten to read from the `winners` table instead of aggregating raw votes. This unblocks the next two items.
+- **Approved by:** Greg Hart
+- **Date queued:** 2026-07-15
+
+---
+
+### Winner history panel — show featured comment + row click to celebrate
+- **Status:** Pending
+- **Depends on:** "Declare winner" must ship first — history now reads from the `winners` table.
+- **Description:** Each history row in the Winner History panel gains a third line when a `featured_comment` exists for that month: rendered in italic muted text below the winner name and meta line. The entire row becomes clickable (cursor pointer, subtle hover state) and opens the celebration overlay for that month's winner data.
+- **Scope:** Admin page — Winner History panel
+- **Design notes:**
+  - Comment line: italic, `var(--muted)`, same visual style as `reason-item` in live results.
+  - Row hover: light `var(--cyan-tint)` or `var(--orange-tint)` background, `border-radius: 8px`.
+  - Clickable area is the full row, not just a button — add a subtle `🏆` or "View" affordance on the right so it's discoverable.
+- **Approved by:** Greg Hart
+- **Date queued:** 2026-07-15
+
+---
+
+### Celebration overlay — screenshot-ready winner announcement
+- **Status:** Pending
+- **Depends on:** "Winner history panel" must ship first — overlay is triggered by clicking history rows.
+- **Description:** Full-screen overlay (not a new route) that renders a clean, screenshot-ready winner card. Opens automatically after a winner is declared. Re-openable by clicking any row in the Winner History panel. Close button top-right, visually subtle. No admin chrome or sim bar visible inside the overlay.
+- **Scope:** Admin page
+- **Design notes:**
+  - Background: `var(--navy)` — dark, pops in screenshot, distinct from rest of app.
+  - Layout (centered, vertically): frame bar stripe at top → eyebrow "CoverMyMeds · PCLT Team" in muted white → "Employee of the Month" in large serif white → month/year in muted white → large avatar (80px) → winner name in large serif white → featured comment in italic `var(--orange)` (skip element entirely if no comment) → vote count + "PCLT Team" in small muted white → frame bar stripe at bottom.
+  - Close button: top-right, white `✕`, low opacity so it doesn't show in a casual screenshot.
+  - For co-winners: stack both avatars side by side, both names.
+  - Overlay is dismissible via close button or clicking the backdrop outside the card.
+- **Approved by:** Greg Hart
+- **Date queued:** 2026-07-15
+
+---
+
+## Supabase setup required before implementing
+
+Run the following in the Supabase SQL editor for project `jkpgggdlpjhoojamnhrp` before Claude Code implements the pending items above.
+
+### 1. `vote_backups` table
+
+```sql
+create table vote_backups (
+  month      text primary key,
+  reset_at   timestamptz not null default now(),
+  votes      jsonb not null
+);
+
+alter table vote_backups enable row level security;
+
+create policy "Allow public access"
+on vote_backups for all
+using (true);
 ```
 
-### Implementation Notes
-
-- **`src/constants.js`**: Replace `previousMonthKey()` and `previousMonthLabel()` with a single `getVotingPeriod()` function that returns `{ monthKey, monthLabel, isClosed }` based on the cutoff logic above
-- **`src/App.jsx`**: Pass `isClosed` down to `VotingView`
-- **`src/components/VotingView.jsx`**: When `isClosed` is true, show a "Voting closed" message instead of the ballot. Example copy: *"Voting for [Month] closed on the 5th. Check back soon for results!"*
-- The monthly reset in the admin panel remains manual — admin still clicks "Reset votes" to clear votes before a new round begins. The cutoff only affects the voter UI.
-
-### Edge Cases
-
-- User in a non-ET timezone: use ET for cutoff calculation regardless of local timezone
-- User votes right at cutoff: the period is recalculated fresh on each page load and each vote submission
-- What if cutoff falls on a weekend: no special handling needed — cutoff is always the 5th at 5pm ET regardless of day of week
-
----
-
-## Feature 2: Winner History Panel (Admin Only)
-
-### Business Rules
-
-- Show last 12 months maximum, most recent at top
-- Each month shows: month name + year, winner name(s), vote count, total votes cast
-- Ties show all co-winners
-- Months with zero votes show "No votes recorded"
-- Panel appears below the existing results card on the right column of the admin layout
-
-### Data Source
-
-Query Supabase `votes` table grouped by month. For each month, find the voter_name(s) with the highest count.
-
-```js
-// Pseudocode for winner calculation per month
-async function getWinnerHistory() {
-  const { data } = await supabase
-    .from('votes')
-    .select('month, choice')
-    .order('month', { ascending: false })
-
-  // Group by month
-  const byMonth = {}
-  data.forEach(({ month, choice }) => {
-    if (!byMonth[month]) byMonth[month] = {}
-    byMonth[month][choice] = (byMonth[month][choice] || 0) + 1
-  })
-
-  // For each month, find winner(s)
-  return Object.entries(byMonth)
-    .slice(0, 12) // last 12 months
-    .map(([month, counts]) => {
-      const max = Math.max(...Object.values(counts))
-      const winners = Object.entries(counts)
-        .filter(([, c]) => c === max)
-        .map(([name]) => name)
-      const totalVotes = Object.values(counts).reduce((a, b) => a + b, 0)
-      return { month, winners, voteCount: max, totalVotes }
-    })
-}
-```
-
-### UI Spec
-
-- Section heading: "Winner History"
-- Each row: `[Month Year] — [Winner Name(s)] ([X] votes)`
-- Tie display: `June 2026 — Miranda Delatore & Doug Bedell (3 votes each)`
-- Month format: "June 2026" (not "2026-06")
-- Winner name in **bold magenta** (`var(--magenta)`)
-- Most recent month at top
-- If no votes for a month that exists in the DB: skip it (don't show empty months)
-- Add a "Refresh history" button
-
-### Placement
-
-Add as a new `<Card>` below the results card in the right column of `AdminView.jsx`. On mobile it stacks below everything else.
-
-### New Supabase function needed in `src/supabase.js`
-
-```js
-export async function getWinnerHistory() {
-  const { data, error } = await supabase
-    .from('votes')
-    .select('month, choice')
-    .order('month', { ascending: false })
-
-  if (error || !data) return []
-
-  // Group by month
-  const byMonth = {}
-  data.forEach(({ month, choice }) => {
-    if (!byMonth[month]) byMonth[month] = {}
-    byMonth[month][choice] = (byMonth[month][choice] || 0) + 1
-  })
-
-  return Object.entries(byMonth)
-    .slice(0, 12)
-    .map(([month, counts]) => {
-      const max = Math.max(...Object.values(counts))
-      const winners = Object.entries(counts)
-        .filter(([, c]) => c === max)
-        .map(([name]) => name)
-      const totalVotes = Object.values(counts).reduce((a, b) => a + b, 0)
-      // Convert "2026-06" to "June 2026"
-      const [year, mo] = month.split('-')
-      const label = new Date(+year, +mo - 1, 1)
-        .toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
-      return { month, label, winners, voteCount: max, totalVotes }
-    })
-}
+**Shape of `votes` jsonb:**
+```json
+[
+  { "voter_name": "Miranda Delatore", "choice": "Greg Hart", "reason": "Fixed the thing nobody else would touch" },
+  { "voter_name": "Nicole Eckl",      "choice": "Megan Wetzel", "reason": "" }
+]
 ```
 
 ---
 
-## Files to Change
+### 2. `winners` table
 
-| File | Change |
-|------|--------|
-| `src/constants.js` | Replace `previousMonthKey/Label` with `getVotingPeriod()` returning `{ monthKey, monthLabel, isClosed }` |
-| `src/App.jsx` | Use `getVotingPeriod()`, pass `isClosed` to `VotingView` |
-| `src/components/VotingView.jsx` | Show closed state when `isClosed` is true |
-| `src/supabase.js` | Add `getWinnerHistory()` function |
-| `src/components/AdminView.jsx` | Add winner history panel in right column |
-| `src/components/AdminView.module.css` | Add styles for history panel rows |
+```sql
+create table winners (
+  month             text primary key,
+  winner_names      text[] not null,
+  featured_comment  text,
+  vote_count        int,
+  total_votes       int,
+  declared_by       text,
+  declared_at       timestamptz default now()
+);
 
----
+alter table winners enable row level security;
 
----
-
-## Feature 3: Admin Voting Page Tab — Personal Links
-
-### Problem
-When an admin clicks the "Voting page" tab from the admin panel, they see a "no voting link detected" error because the admin URL (`?admin=true`) has no token attached.
-
-### Solution (Option C)
-Replace the current "Voting page" tab content with a card that displays each admin's personal voting link directly. Since they're past the PIN gate they're trusted — surface their links right there so they can click through.
-
-### Business Rules
-- Only show links for the 3 admins: Bridget Readey, Greg Hart, Megan Wetzel
-- Each link opens in the same tab
-- Clicking navigates to their voter ballot with token pre-loaded
-
-### UI Spec
-Each admin sees three buttons — one per admin — styled as ghost buttons linking to their voter URL. Below the buttons a small note explains other team members use their own personalized links.
-
-### Files to Change
-
-| File | Change |
-|------|--------|
-| `src/constants.js` | Move TOKEN_MAP here from AdminView so both App.jsx and AdminView can import it |
-| `src/App.jsx` | Replace Voting page tab content with admin personal links card using TOKEN_MAP |
-| `src/components/AdminView.jsx` | Import TOKEN_MAP from constants.js instead of defining it inline |
-
-### Implementation Notes
-- TOKEN_MAP moved to `constants.js` as an exported const
-- Links are `<a href={voteLink}>` using same origin/pathname as admin URL
-- Use existing ghost button styles
-- Only show the 3 admin entries (Bridget Readey, Greg Hart, Megan Wetzel), not all 12
-
-## How to Implement
-
-Tell Claude: *"Please implement the pending changes in PENDING_CHANGES.md into the React app."*
-
-Claude will produce updated files. Download them, copy into the project, build and deploy:
-
-```bash
-VITE_ADMIN_PIN=0406 VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImprcGdnZ2RscGpob29qYW1uaHJwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM1NzkyNDIsImV4cCI6MjA5OTE1NTI0Mn0.gRElVna8f2KGdJEA33IZ91IPIbldHOaEQu7Mh4NKErM npm run build && npx gh-pages -d dist
-git add .
-git commit -m "Auto cutoff + winner history"
-git push origin main
+create policy "Allow public access"
+on winners for all
+using (true);
 ```
 
 ---
 
-## Testing Checklist
+## Shipped items
 
-- [ ] Before July 5th 5pm ET: voting shows June ballot
-- [ ] After July 5th 5pm ET: voting shows July ballot, June ballot shows closed message
-- [ ] Vote cast after cutoff saves to July in Supabase, not June
-- [ ] Admin winner history shows correct winner for each month
-- [ ] Ties show both names
-- [ ] History limited to 12 months
-- [ ] Mobile layout still stacks correctly
-- [ ] Admin "Voting page" tab shows 3 personal links, not error
-- [ ] Clicking an admin link opens correct ballot with token
-- [ ] Non-admin voters are unaffected
+<!-- Move completed entries here once Greg deploys them, changing Status to Shipped and adding a deploy date. -->
+
+*Nothing shipped via this file yet.*

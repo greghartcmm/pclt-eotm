@@ -1,20 +1,78 @@
 import { useState, useEffect, useCallback } from "react"
 import { ROSTER, TOKEN_MAP } from "../constants.js"
-import { getVotes, clearVotes, getWinnerHistory } from "../supabase.js"
+import {
+  getVotes,
+  clearVotes,
+  getWinnerHistory,
+  backupVotes,
+  getVoteBackup,
+  restoreVotesFromBackup,
+  declareWinner,
+  getWinner,
+} from "../supabase.js"
 import { Avatar, Card, Button, Note, Spinner } from "./UI.jsx"
+import ConfirmModal from "./ConfirmModal.jsx"
+import DeclareWinnerModal from "./DeclareWinnerModal.jsx"
+import CelebrationOverlay from "./CelebrationOverlay.jsx"
 import styles from "./AdminView.module.css"
 
-export default function AdminView({ monthKey, monthLabel }) {
-  const [votes, setVotes]             = useState(null)
-  const [loading, setLoading]         = useState(false)
-  const [error, setError]             = useState("")
-  const [resetMsg, setResetMsg]       = useState("")
-  const [history, setHistory]         = useState(null)
-  const [historyErr, setHistoryErr]   = useState(false)
-  const [linksOpen, setLinksOpen]     = useState(false)
-  const [copied, setCopied]           = useState("")
+function formatBackupBanner(backup) {
+  const dt = new Date(backup.reset_at)
+  const monthDay = dt.toLocaleDateString("en-US", { month: "long", day: "numeric" })
+  const time = dt.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })
+  const n = backup.votes.length
+  const firstNames = backup.votes.map(v => v.voter_name.split(" ")[0]).join(", ")
+  return `Backup from ${monthDay} at ${time} — ${n} vote${n === 1 ? "" : "s"}${firstNames ? ` (${firstNames})` : ""}`
+}
 
-  useEffect(() => { loadResults(); loadHistory() }, [])
+function formatRestoreBody(backup) {
+  const dt = new Date(backup.reset_at)
+  const date = dt.toLocaleDateString("en-US", { month: "long", day: "numeric" })
+  const time = dt.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })
+  const n = backup.votes.length
+  return `Restore ${n} vote${n === 1 ? "" : "s"} from ${date} at ${time}? This will overwrite any votes cast since the reset.`
+}
+
+export default function AdminView({ monthKey, monthLabel }) {
+  const [votes, setVotes]                     = useState(null)
+  const [loading, setLoading]                 = useState(false)
+  const [error, setError]                     = useState("")
+  const [history, setHistory]                 = useState(null)
+  const [historyErr, setHistoryErr]           = useState(false)
+  const [linksOpen, setLinksOpen]             = useState(false)
+  const [copied, setCopied]                   = useState("")
+  const [backup, setBackup]                   = useState(null)
+  const [winner, setWinner]                   = useState(null)
+  const [resetModalOpen, setResetModalOpen]   = useState(false)
+  const [restoreModalOpen, setRestoreModalOpen] = useState(false)
+  const [declareModalOpen, setDeclareModalOpen] = useState(false)
+  const [actionLoading, setActionLoading]     = useState(false)
+  const [actionError, setActionError]         = useState("")
+  const [celebrationData, setCelebrationData] = useState(null)
+
+  const counts = {}
+  const reasonsByChoice = {}
+  ROSTER.forEach(n => { counts[n] = 0; reasonsByChoice[n] = [] })
+  if (votes) {
+    Object.entries(votes).forEach(([, { choice, reason }]) => {
+      if (Object.prototype.hasOwnProperty.call(counts, choice)) {
+        counts[choice]++
+        if (reason) reasonsByChoice[choice].push(reason)
+      }
+    })
+  }
+  const entries = Object.entries(counts).filter(([, c]) => c > 0).sort((a, b) => b[1] - a[1])
+  const totalVotes = votes ? Object.keys(votes).length : 0
+  const turnout = Math.round((totalVotes / ROSTER.length) * 100)
+  const max = entries[0]?.[1] ?? 0
+  const votedSet = new Set(votes ? Object.keys(votes) : [])
+
+  useEffect(() => {
+    loadResults()
+    loadHistory()
+    loadBackup()
+    loadWinner()
+  }, [])
 
   async function loadResults() {
     setLoading(true); setError("")
@@ -30,12 +88,56 @@ export default function AdminView({ monthKey, monthLabel }) {
     else setHistory(data)
   }, [])
 
+  async function loadBackup() {
+    const data = await getVoteBackup(monthKey)
+    setBackup(data)
+  }
+
+  async function loadWinner() {
+    const data = await getWinner(monthKey)
+    setWinner(data)
+  }
+
   async function handleReset() {
-    if (!confirm(`Clear all votes for ${monthLabel}? This can't be undone.`)) return
-    setLoading(true); setError("")
-    try { await clearVotes(monthKey); setVotes({}); setResetMsg(`Votes for ${monthLabel} cleared.`) }
-    catch (e) { setError(e.message) }
-    setLoading(false)
+    setActionLoading(true); setActionError("")
+    try {
+      await backupVotes(monthKey, votes || {})
+      await clearVotes(monthKey)
+      setVotes({})
+      await loadBackup()
+      setResetModalOpen(false)
+    } catch (e) {
+      setActionError(e.message)
+    }
+    setActionLoading(false)
+  }
+
+  async function handleRestore() {
+    setActionLoading(true); setActionError("")
+    try {
+      await restoreVotesFromBackup(monthKey, backup.votes)
+      await loadResults()
+      setRestoreModalOpen(false)
+    } catch (e) {
+      setActionError(e.message)
+    }
+    setActionLoading(false)
+  }
+
+  async function handleDeclareWinner(winnerNames, featuredComment) {
+    const voteCount = winnerNames.length > 0 ? (counts[winnerNames[0]] || 0) : 0
+    await declareWinner(monthKey, winnerNames, featuredComment, voteCount, totalVotes)
+    const w = await getWinner(monthKey)
+    setWinner(w)
+    setDeclareModalOpen(false)
+    setCelebrationData({
+      winners: winnerNames,
+      featuredComment,
+      voteCount,
+      totalVotes,
+      label: monthLabel,
+      month: monthKey,
+    })
   }
 
   function voteLink(name) {
@@ -51,165 +153,243 @@ export default function AdminView({ monthKey, monthLabel }) {
     setCopied("__all__"); setTimeout(() => setCopied(""), 2000)
   }
 
-  // Tally — votes is now { voterName: { choice, reason } }
-  const counts = {}
-  const reasonsByChoice = {}
-  ROSTER.forEach(n => { counts[n] = 0; reasonsByChoice[n] = [] })
-  if (votes) {
-    Object.entries(votes).forEach(([, { choice, reason }]) => {
-      if (counts.hasOwnProperty(choice)) {
-        counts[choice]++
-        if (reason) reasonsByChoice[choice].push(reason)
-      }
-    })
-  }
-  const entries = Object.entries(counts).filter(([, c]) => c > 0).sort((a, b) => b[1] - a[1])
-  const totalVotes = votes ? Object.keys(votes).length : 0
-  const turnout = Math.round((totalVotes / ROSTER.length) * 100)
-  const max = entries[0]?.[1] ?? 0
-  const votedSet = new Set(votes ? Object.keys(votes) : [])
-
   return (
-    <div className={styles.layout}>
-      <div className={styles.leftCol}>
+    <>
+      <div className={styles.layout}>
+        <div className={styles.leftCol}>
 
-      {/* ── 1. Live results ── */}
-      <Card>
-        <div className={styles.resultsHeader}>
-          <div>
-            <h2 className={styles.h2}>Live results — {monthLabel}</h2>
-            <p className={styles.sub}>Only admins can see this until voting closes.</p>
-          </div>
-          <div className={styles.headerActions}>
-            <Button variant="ghost" onClick={loadResults} disabled={loading}>
-              {loading ? "Loading…" : "Refresh"}
-            </Button>
-            <Button variant="danger" onClick={handleReset} disabled={loading}>
-              Reset votes
-            </Button>
-          </div>
-        </div>
-
-        {error && <Note variant="magenta">{error}</Note>}
-        {resetMsg && <Note variant="cyan">{resetMsg}</Note>}
-        {loading && <Spinner />}
-
-        {votes !== null && (
-          <>
-            <div className={styles.stats}>
-              <div className={styles.stat}><div className={styles.statN}>{totalVotes}</div><div className={styles.statL}>Votes cast</div></div>
-              <div className={styles.stat}><div className={styles.statN}>{ROSTER.length}</div><div className={styles.statL}>Eligible</div></div>
-              <div className={styles.stat}><div className={styles.statN}>{turnout}%</div><div className={styles.statL}>Turnout</div></div>
+        <Card>
+          <div className={styles.resultsHeader}>
+            <div>
+              <h2 className={styles.h2}>Live results — {monthLabel}</h2>
+              <p className={styles.sub}>Only admins can see this until voting closes.</p>
             </div>
-
-            {entries.length === 0 && (
-              <p className={styles.empty}>No votes yet — results will appear as people vote.</p>
-            )}
-
-            <div className={styles.candidateList}>
-              {entries.map(([name, count]) => {
-                const isLead = count === max && max > 0
-                const reasons = reasonsByChoice[name]
-                return (
-                  <div key={name} className={`${styles.candidateRow} ${isLead ? styles.candidateLead : ""}`}>
-                    <div className={styles.candidateTop}>
-                      <Avatar name={name} size={30} />
-                      <span className={styles.candidateName}>
-                        {isLead && <span className={styles.crown}>★ </span>}
-                        {name}
-                      </span>
-                      <span className={styles.candidateCount}>{count} {count === 1 ? "vote" : "votes"}</span>
-                    </div>
-                    {reasons.length > 0 && (
-                      <div className={styles.reasonList}>
-                        {reasons.map((r, i) => (
-                          <div key={i} className={styles.reasonItem}>"{r}"</div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )
-              })}
+            <div className={styles.headerActions}>
+              <Button variant="ghost" onClick={loadResults} disabled={loading}>
+                {loading ? "Loading…" : "Refresh"}
+              </Button>
+              <Button
+                variant="ghost"
+                onClick={() => setDeclareModalOpen(true)}
+                disabled={loading}
+              >
+                {winner ? "Edit winner" : "Declare winner"}
+              </Button>
+              <Button
+                variant="danger"
+                onClick={() => setResetModalOpen(true)}
+                disabled={loading}
+              >
+                Reset votes
+              </Button>
             </div>
-          </>
-        )}
-      </Card>
-
-      {/* ── 2. Winner history ── */}
-      <Card>
-        <div className={styles.resultsHeader}>
-          <div>
-            <h2 className={styles.h2}>Winner history</h2>
-            <p className={styles.sub}>Last 12 months, most recent first.</p>
           </div>
-          <Button variant="ghost" onClick={loadHistory}>Refresh</Button>
-        </div>
 
-        {history === null && !historyErr && <Spinner />}
-        {historyErr && <Note variant="magenta">Failed to load history. Try refreshing.</Note>}
-        {history !== null && history.length === 0 && (
-          <p className={styles.sub}>No history yet — past months will appear here.</p>
-        )}
-        {history !== null && history.length > 0 && (
-          <div className={styles.historyList}>
-            {history.map(({ month, label, winners, voteCount, totalVotes }) => (
-              <div key={month} className={styles.historyRow}>
-                <span className={styles.historyMonth}>{label}</span>
-                <span className={styles.historyWinner}>
-                  {winners.map((w, i) => (
-                    <span key={w}>
-                      {i > 0 && <span className={styles.historySep}> & </span>}
-                      <strong className={styles.winnerName}>{w}</strong>
-                    </span>
-                  ))}
-                </span>
-                <span className={styles.historyMeta}>
-                  {voteCount} vote{voteCount === 1 ? "" : "s"}{winners.length > 1 ? " each" : ""} / {totalVotes} total
-                </span>
-              </div>
-            ))}
-          </div>
-        )}
-      </Card>
+          {error && <Note variant="magenta">{error}</Note>}
 
-      </div>
-      <div className={styles.rightCol}>
-      {/* ── 3. Voter links (collapsible on mobile) ── */}
-      <Card>
-        <div className={styles.linksHeader} onClick={() => setLinksOpen(o => !o)}>
-          <div>
-            <h2 className={styles.h2}>Voter links</h2>
-            <p className={styles.sub}>{monthLabel} — send each person their unique link.</p>
-          </div>
-          <button className={styles.collapseBtn} aria-expanded={linksOpen}>
-            <span className={`${styles.chevron} ${linksOpen ? styles.chevronOpen : ""}`}>▾</span>
-          </button>
-        </div>
-
-        <div className={`${styles.linksBody} ${linksOpen ? styles.linksBodyOpen : ""}`}>
-          <Button variant="ghost" onClick={copyAll} className={styles.copyAllBtn}>
-            {copied === "__all__" ? "✓ Copied all" : "Copy all links"}
-          </Button>
-          <div className={styles.tokenList}>
-            {ROSTER.map(name => (
-              <div key={name} className={styles.tokenRow}>
-                <Avatar name={name} size={26} />
-                <span className={styles.tokenName}>{name}</span>
-                {votes !== null && (
-                  <span className={votedSet.has(name) ? styles.votedPill : styles.pendingPill}>
-                    {votedSet.has(name) ? "voted" : "pending"}
-                  </span>
-                )}
-                <button className={styles.copyBtn} onClick={() => copyLink(name)}>
-                  {copied === name ? "✓" : "Copy"}
+          {backup !== null && (
+            <Note variant="orange">
+              <div className={styles.backupBanner}>
+                <span>{formatBackupBanner(backup)}</span>
+                <button
+                  className={styles.restoreBtn}
+                  onClick={() => setRestoreModalOpen(true)}
+                >
+                  Restore backup
                 </button>
               </div>
-            ))}
-          </div>
-        </div>
-      </Card>
+            </Note>
+          )}
 
+          {loading && <Spinner />}
+
+          {votes !== null && (
+            <>
+              <div className={styles.stats}>
+                <div className={styles.stat}>
+                  <div className={styles.statN}>{totalVotes}</div>
+                  <div className={styles.statL}>Votes cast</div>
+                </div>
+                <div className={styles.stat}>
+                  <div className={styles.statN}>{ROSTER.length}</div>
+                  <div className={styles.statL}>Eligible</div>
+                </div>
+                <div className={styles.stat}>
+                  <div className={styles.statN}>{turnout}%</div>
+                  <div className={styles.statL}>Turnout</div>
+                </div>
+              </div>
+
+              {entries.length === 0 && (
+                <p className={styles.empty}>No votes yet — results will appear as people vote.</p>
+              )}
+
+              <div className={styles.candidateList}>
+                {entries.map(([name, count]) => {
+                  const isLead = count === max && max > 0
+                  const reasons = reasonsByChoice[name]
+                  return (
+                    <div key={name} className={`${styles.candidateRow} ${isLead ? styles.candidateLead : ""}`}>
+                      <div className={styles.candidateTop}>
+                        <Avatar name={name} size={30} />
+                        <span className={styles.candidateName}>
+                          {isLead && <span className={styles.crown}>★ </span>}
+                          {name}
+                        </span>
+                        <span className={styles.candidateCount}>{count} {count === 1 ? "vote" : "votes"}</span>
+                      </div>
+                      {reasons.length > 0 && (
+                        <div className={styles.reasonList}>
+                          {reasons.map((r, i) => (
+                            <div key={i} className={styles.reasonItem}>"{r}"</div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            </>
+          )}
+        </Card>
+
+        <Card>
+          <div className={styles.resultsHeader}>
+            <div>
+              <h2 className={styles.h2}>Winner history</h2>
+              <p className={styles.sub}>Last 12 months, most recent first.</p>
+            </div>
+            <Button variant="ghost" onClick={loadHistory}>Refresh</Button>
+          </div>
+
+          {history === null && !historyErr && <Spinner />}
+          {historyErr && <Note variant="magenta">Failed to load history. Try refreshing.</Note>}
+          {history !== null && history.length === 0 && (
+            <p className={styles.sub}>No history yet — past months will appear here.</p>
+          )}
+          {history !== null && history.length > 0 && (
+            <div className={styles.historyList}>
+              {history.map(({ month, label, winners, voteCount, totalVotes: tv, featuredComment }) => (
+                <div key={month} className={styles.historyRow}>
+                  <div
+                    className={styles.historyRowInner}
+                    onClick={() => setCelebrationData({
+                      winners,
+                      featuredComment,
+                      voteCount,
+                      totalVotes: tv,
+                      label,
+                      month,
+                    })}
+                  >
+                    <div className={styles.historyRowContent}>
+                      <span className={styles.historyMonth}>{label}</span>
+                      <span className={styles.historyWinner}>
+                        {winners.map((w, i) => (
+                          <span key={w}>
+                            {i > 0 && <span className={styles.historySep}> & </span>}
+                            <strong className={styles.winnerName}>{w}</strong>
+                          </span>
+                        ))}
+                      </span>
+                      <span className={styles.historyMeta}>
+                        {voteCount} vote{voteCount === 1 ? "" : "s"}{winners.length > 1 ? " each" : ""} / {tv} total
+                      </span>
+                      {featuredComment && (
+                        <p className={styles.historyComment}>"{featuredComment}"</p>
+                      )}
+                    </div>
+                    <span className={styles.viewAffordance}>🏆</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
+
+        </div>
+        <div className={styles.rightCol}>
+        <Card>
+          <div className={styles.linksHeader} onClick={() => setLinksOpen(o => !o)}>
+            <div>
+              <h2 className={styles.h2}>Voter links</h2>
+              <p className={styles.sub}>{monthLabel} — send each person their unique link.</p>
+            </div>
+            <button className={styles.collapseBtn} aria-expanded={linksOpen}>
+              <span className={`${styles.chevron} ${linksOpen ? styles.chevronOpen : ""}`}>▾</span>
+            </button>
+          </div>
+
+          <div className={`${styles.linksBody} ${linksOpen ? styles.linksBodyOpen : ""}`}>
+            <Button variant="ghost" onClick={copyAll} className={styles.copyAllBtn}>
+              {copied === "__all__" ? "✓ Copied all" : "Copy all links"}
+            </Button>
+            <div className={styles.tokenList}>
+              {ROSTER.map(name => (
+                <div key={name} className={styles.tokenRow}>
+                  <Avatar name={name} size={26} />
+                  <span className={styles.tokenName}>{name}</span>
+                  {votes !== null && (
+                    <span className={votedSet.has(name) ? styles.votedPill : styles.pendingPill}>
+                      {votedSet.has(name) ? "voted" : "pending"}
+                    </span>
+                  )}
+                  <button className={styles.copyBtn} onClick={() => copyLink(name)}>
+                    {copied === name ? "✓" : "Copy"}
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        </Card>
+
+        </div>
       </div>
-    </div>
+
+      {resetModalOpen && (
+        <ConfirmModal
+          title={`Reset votes for ${monthLabel}?`}
+          body="A backup will be saved and can be restored from this panel."
+          confirmLabel="Reset votes"
+          variant="danger"
+          loading={actionLoading}
+          error={actionError}
+          onConfirm={handleReset}
+          onCancel={() => { setResetModalOpen(false); setActionError("") }}
+        />
+      )}
+
+      {restoreModalOpen && backup && (
+        <ConfirmModal
+          title="Restore backup?"
+          body={formatRestoreBody(backup)}
+          confirmLabel="Restore"
+          variant="primary"
+          loading={actionLoading}
+          error={actionError}
+          onConfirm={handleRestore}
+          onCancel={() => { setRestoreModalOpen(false); setActionError("") }}
+        />
+      )}
+
+      {declareModalOpen && (
+        <DeclareWinnerModal
+          monthLabel={monthLabel}
+          entries={entries}
+          max={max}
+          reasonsByChoice={reasonsByChoice}
+          currentWinner={winner}
+          onSave={handleDeclareWinner}
+          onClose={() => setDeclareModalOpen(false)}
+        />
+      )}
+
+      {celebrationData && (
+        <CelebrationOverlay
+          data={celebrationData}
+          onClose={() => setCelebrationData(null)}
+        />
+      )}
+    </>
   )
 }
