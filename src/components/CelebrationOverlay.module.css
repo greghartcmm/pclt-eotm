@@ -1,10 +1,13 @@
-.overlay {
+.backdrop {
   position: fixed;
   inset: 0;
   z-index: 200;
-  background: var(--navy);
+  background: rgba(1, 26, 42, 0.92);
   display: flex;
   flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
 }
 
 .closeBtn {
@@ -23,32 +26,52 @@
 }
 .closeBtn:hover { opacity: 0.8; }
 
+/* Fixed-size card — the capture target */
+.cardWrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.card {
+  width: 900px;
+  height: 500px;
+  background: var(--navy);
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+
 .content {
   flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 40px 24px;
-  gap: 12px;
+  padding: 32px 48px;
+  gap: 10px;
   text-align: center;
 }
 
 .eyebrow {
-  font-size: 12px;
+  font-size: 11px;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.12em;
   color: rgba(255, 255, 255, 0.5);
   margin: 0;
+  font-weight: 700;
 }
 
 .title {
   font-family: var(--serif);
-  font-size: 36px;
+  font-size: 38px;
   font-weight: 700;
   color: #fff;
   margin: 0;
-  line-height: 1.2;
+  line-height: 1.15;
 }
 
 .monthLabel {
@@ -67,18 +90,18 @@
 
 .winnerNames {
   font-family: var(--serif);
-  font-size: 28px;
+  font-size: 30px;
   font-weight: 700;
   color: #fff;
   margin: 0;
 }
 
 .comment {
-  font-size: 16px;
+  font-size: 15px;
   font-style: italic;
   color: var(--orange);
-  max-width: 480px;
-  margin: 4px 0;
+  max-width: 620px;
+  margin: 2px 0;
   line-height: 1.5;
 }
 
@@ -86,4 +109,42 @@
   font-size: 12px;
   color: rgba(255, 255, 255, 0.4);
   margin: 0;
+}
+
+/* Copy button row — outside the card, not captured */
+.copyRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.copyBtn {
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  padding: 8px 18px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.copyBtn:hover:not(:disabled) { background: rgba(255, 255, 255, 0.18); }
+.copyBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.copyMsg {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+@media (max-width: 940px) {
+  .card {
+    width: calc(100vw - 40px);
+    height: auto;
+    min-height: 300px;
+  }
+  .content { padding: 24px; }
+  .title { font-size: 28px; }
+  .winnerNames { font-size: 22px; }
 }
