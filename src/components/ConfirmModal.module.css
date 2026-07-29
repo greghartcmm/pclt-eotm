@@ -42,6 +42,26 @@
   margin: 0 0 16px;
 }
 
+.pinInput {
+  width: 100%;
+  font: inherit;
+  font-size: 18px;
+  letter-spacing: 0.25em;
+  text-align: center;
+  border: 1.5px solid var(--line);
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin-bottom: 16px;
+  color: var(--ink);
+  background: var(--white);
+  transition: border-color .12s, box-shadow .12s;
+}
+.pinInput:focus {
+  outline: none;
+  border-color: var(--navy);
+  box-shadow: 0 0 0 3px rgba(1, 66, 106, 0.1);
+}
+
 .actions {
   display: flex;
   gap: 10px;

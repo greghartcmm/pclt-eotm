@@ -4,6 +4,7 @@ import styles from "./ConfirmModal.module.css"
 export default function ConfirmModal({
   title,
   body,
+  children,
   confirmLabel,
   cancelLabel = "Cancel",
   variant = "danger",
@@ -17,6 +18,7 @@ export default function ConfirmModal({
       <div className={styles.modal} onClick={e => e.stopPropagation()}>
         <h2 className={styles.title}>{title}</h2>
         <p className={styles.body}>{body}</p>
+        {children}
         {error && <p className={styles.error}>{error}</p>}
         <div className={styles.actions}>
           <Button variant="ghost" onClick={onCancel} disabled={loading}>

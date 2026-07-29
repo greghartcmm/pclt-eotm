@@ -15,6 +15,7 @@ import ConfirmModal from "./ConfirmModal.jsx"
 import DeclareWinnerModal from "./DeclareWinnerModal.jsx"
 import CelebrationOverlay from "./CelebrationOverlay.jsx"
 import styles from "./AdminView.module.css"
+import modalStyles from "./ConfirmModal.module.css"
 
 function formatBackupBanner(backup) {
   const dt = new Date(backup.reset_at)
@@ -44,6 +45,8 @@ export default function AdminView({ monthKey, monthLabel }) {
   const [backup, setBackup]                   = useState(null)
   const [winner, setWinner]                   = useState(null)
   const [resetModalOpen, setResetModalOpen]   = useState(false)
+  const [resetPin, setResetPin]               = useState("")
+  const [resetPinError, setResetPinError]     = useState("")
   const [restoreModalOpen, setRestoreModalOpen] = useState(false)
   const [declareModalOpen, setDeclareModalOpen] = useState(false)
   const [actionLoading, setActionLoading]     = useState(false)
@@ -96,6 +99,14 @@ export default function AdminView({ monthKey, monthLabel }) {
   async function loadWinner() {
     const data = await getWinner(monthKey)
     setWinner(data)
+  }
+
+  async function handleResetWithPin() {
+    if (resetPin !== import.meta.env.VITE_ADMIN_PIN) {
+      setResetPinError("Incorrect PIN.")
+      return
+    }
+    await handleReset()
   }
 
   async function handleReset() {
@@ -162,7 +173,7 @@ export default function AdminView({ monthKey, monthLabel }) {
           <div className={styles.resultsHeader}>
             <div>
               <h2 className={styles.h2}>Live results — {monthLabel}</h2>
-              <p className={styles.sub}>Only admins can see this until voting closes.</p>
+              <p className={styles.sub}>Voting closes the 5th · Declare Winner · Reset on the 1st for the next round</p>
             </div>
             <div className={styles.headerActions}>
               <Button variant="ghost" onClick={loadResults} disabled={loading}>
@@ -349,14 +360,26 @@ export default function AdminView({ monthKey, monthLabel }) {
       {resetModalOpen && (
         <ConfirmModal
           title={`Reset votes for ${monthLabel}?`}
-          body="A backup will be saved and can be restored from this panel."
+          body="A backup will be saved. Enter the admin PIN to confirm."
           confirmLabel="Reset votes"
           variant="danger"
           loading={actionLoading}
-          error={actionError}
-          onConfirm={handleReset}
-          onCancel={() => { setResetModalOpen(false); setActionError("") }}
-        />
+          error={resetPinError || actionError}
+          onConfirm={handleResetWithPin}
+          onCancel={() => { setResetModalOpen(false); setActionError(""); setResetPin(""); setResetPinError("") }}
+        >
+          <input
+            className={modalStyles.pinInput}
+            type="password"
+            inputMode="numeric"
+            placeholder="PIN"
+            maxLength={8}
+            value={resetPin}
+            onChange={e => { setResetPin(e.target.value); setResetPinError("") }}
+            onKeyDown={e => e.key === "Enter" && handleResetWithPin()}
+            autoFocus
+          />
+        </ConfirmModal>
       )}
 
       {restoreModalOpen && backup && (
