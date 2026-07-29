@@ -108,14 +108,6 @@ export default function VotingView({ voterName, monthKey, monthLabel, existingVo
     dismissTimer.current = setTimeout(() => setOverlayVisible(false), 2600)
   }
 
-  function mobileButtonLabel() {
-    if (status === "submitting") return "Saving…"
-    if (!picked)       return "Select someone to vote"
-    if (!isChanging)   return `Cast vote for ${picked}`
-    if (!hasNewPick)   return `Your vote: ${picked}`
-    return `Change vote to ${picked}`
-  }
-
   return (
     <>
       <Card className={styles.voteCard}>
@@ -139,7 +131,7 @@ export default function VotingView({ voterName, monthKey, monthLabel, existingVo
                   key={name}
                   className={`${styles.pick} ${picked === name ? styles.pickSelected : ""}`}
                   aria-pressed={picked === name}
-                  onClick={() => { setPicked(name); setReason("") }}
+                  onClick={() => { setPicked(name); setReason(""); if (isMobile) setSheetOpen(true) }}
                   disabled={status === "submitting"}
                 >
                   <Avatar name={name} size={38} />
@@ -185,20 +177,6 @@ export default function VotingView({ voterName, monthKey, monthLabel, existingVo
         </div>
 
         {status === "error" && <Note variant="magenta">{errorMsg}</Note>}
-
-        {/* Mobile: button opens sheet; disabled states */}
-        {isMobile && picked && hasNewPick && !sheetOpen && (
-          <div className={styles.actions}>
-            <Button variant="primary" block onClick={() => setSheetOpen(true)}>
-              {mobileButtonLabel()}
-            </Button>
-          </div>
-        )}
-        {isMobile && (!picked || (isChanging && !hasNewPick)) && (
-          <div className={styles.actions}>
-            <Button variant="primary" block disabled>{mobileButtonLabel()}</Button>
-          </div>
-        )}
 
         {/* Ballot drop overlay */}
         {overlayVisible && (
@@ -253,7 +231,7 @@ export default function VotingView({ voterName, monthKey, monthLabel, existingVo
               <Button variant="ghost" onClick={() => handleCast(null)} disabled={status === "submitting"}>
                 {status === "submitting" ? "Saving…" : "Skip"}
               </Button>
-              <Button variant="primary" onClick={() => handleCast(reason)} disabled={status === "submitting"}>
+              <Button variant="navy" onClick={() => handleCast(reason)} disabled={status === "submitting"}>
                 {status === "submitting" ? "Saving…" : `Vote for ${picked.split(" ")[0]}`}
               </Button>
             </div>
