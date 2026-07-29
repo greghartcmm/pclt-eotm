@@ -14,6 +14,12 @@
   --radius: 14px;
   --serif: Georgia, "Times New Roman", serif;
   --sans: Arial, Helvetica, sans-serif;
+  /* V2 voter palette */
+  --sky: #8ECAE6;
+  --amber: #FFB703;
+  --teal: #219EBC;
+  --teal-tint: #EDF7FC;
+  --teal-border: #9AD8EE;
 }
 
 *, *::before, *::after { box-sizing: border-box; }

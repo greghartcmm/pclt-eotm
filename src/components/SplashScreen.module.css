@@ -1,19 +1,21 @@
 .overlay {
   position: fixed;
-  inset: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 100vh;
+  overflow: hidden;
   z-index: 100;
   background: var(--navy);
   display: flex;
   align-items: center;
   justify-content: center;
-  opacity: 1;
-  transform: scale(1);
-  transition: opacity 0.5s ease, transform 0.5s ease;
+  /* height collapses during dismiss; opacity fades at end */
+  transition: height 0.65s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease;
 }
 
-.dismissing {
+.shellHidden {
   opacity: 0;
-  transform: scale(1.03);
   pointer-events: none;
 }
 
@@ -25,6 +27,11 @@
   padding: 32px 24px;
   max-width: 520px;
   gap: 12px;
+  transition: opacity 0.25s ease;
+}
+
+.bodyHidden {
+  opacity: 0;
 }
 
 @keyframes floatbob {
@@ -44,7 +51,7 @@
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: #FFB703;
+  color: var(--amber);
 }
 
 .title {
@@ -82,7 +89,7 @@
 .quoteAttr {
   font-size: 12px;
   font-style: italic;
-  color: #8ECAE6;
+  color: var(--sky);
   font-variant: normal;
 }
 
@@ -97,10 +104,10 @@
 
 .barFill {
   height: 100%;
-  background: #FFB703;
+  background: var(--amber);
   border-radius: 2px;
   width: 0;
-  transition: width 4s linear;
+  transition: width 4.5s linear;
 }
 
 .skip {
@@ -111,7 +118,7 @@
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: #8ECAE6;
+  color: var(--sky);
   opacity: 0.35;
   padding: 4px 0;
   transition: opacity 0.15s;

@@ -152,7 +152,9 @@ export default function VotingView({ voterName, monthKey, monthLabel, existingVo
               {!isMobile && picked && hasNewPick && row.includes(picked) && (
                 <div className={styles.expansionSlot}>
                   <div className={styles.expansionLabel}>
-                    Why {picked.split(" ")[0]}? They'll read this. Make it worth it.
+                    <span className={styles.expansionLabelName}>Why {picked.split(" ")[0]}?</span>
+                    {" "}
+                    <span className={styles.expansionLabelSuffix}>They'll read this. Make it worth it.</span>
                   </div>
                   <textarea
                     className={styles.reasonTextarea}
@@ -168,7 +170,7 @@ export default function VotingView({ voterName, monthKey, monthLabel, existingVo
                     <div className={styles.expansionActions}>
                       <span className={styles.charCount}>{reason.length} / {MAX_REASON}</span>
                       {status === "submitting" ? <Spinner /> : (
-                        <Button variant="primary" onClick={() => handleCast(reason)}>
+                        <Button variant="navy" onClick={() => handleCast(reason)}>
                           {isChanging
                             ? `Change vote to ${picked.split(" ")[0]}`
                             : `Vote for ${picked.split(" ")[0]}`}

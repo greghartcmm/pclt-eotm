@@ -18,21 +18,21 @@ const QUOTES = [
   { text: "Together, we achieve great things.\nToday, we are clicking on one of them.", attr: "Strategic Alignment Office" },
 ]
 
-const DURATION = 4000
+const DURATION = 4500
 
-export default function SplashScreen({ monthLabel, onDone }) {
+export default function SplashScreen({ monthLabel, headerRef, onRevealPage, onDone }) {
   const [quote] = useState(() => QUOTES[Math.floor(Math.random() * QUOTES.length)])
   const [barWidth, setBarWidth] = useState(0)
-  const [dismissing, setDismissing] = useState(false)
+  const [bodyVisible, setBodyVisible] = useState(true)
+  const [splashHeight, setSplashHeight] = useState("100vh")
+  const [shellVisible, setShellVisible] = useState(true)
   const [gone, setGone] = useState(false)
   const timerRef = useRef(null)
+  const dismissedRef = useRef(false)
 
   useEffect(() => {
-    // Trigger progress bar animation on next frame
     const raf = requestAnimationFrame(() => setBarWidth(250))
-
     timerRef.current = setTimeout(() => dismiss(), DURATION)
-
     return () => {
       cancelAnimationFrame(raf)
       clearTimeout(timerRef.current)
@@ -40,25 +40,47 @@ export default function SplashScreen({ monthLabel, onDone }) {
   }, [])
 
   function dismiss() {
+    if (dismissedRef.current) return
+    dismissedRef.current = true
     clearTimeout(timerRef.current)
-    setDismissing(true)
-  }
 
-  function handleTransitionEnd(e) {
-    if (e.propertyName === "opacity" && dismissing) {
+    // Step 1 (0ms): fade body content
+    setBodyVisible(false)
+
+    // Step 2 (80ms): collapse height to match header strip
+    setTimeout(() => {
+      const headerEl = headerRef?.current
+      const targetHeight = headerEl
+        ? headerEl.getBoundingClientRect().bottom
+        : 0
+      setSplashHeight(`${targetHeight}px`)
+    }, 80)
+
+    // Step 3 (380ms): reveal main page content
+    setTimeout(() => {
+      onRevealPage()
+    }, 380)
+
+    // Step 4 (760ms): fade the shell
+    setTimeout(() => {
+      setShellVisible(false)
+    }, 760)
+
+    // Step 5 (980ms): done — remove from DOM
+    setTimeout(() => {
       setGone(true)
       onDone()
-    }
+    }, 980)
   }
 
   if (gone) return null
 
   return (
     <div
-      className={`${styles.overlay} ${dismissing ? styles.dismissing : ""}`}
-      onTransitionEnd={handleTransitionEnd}
+      className={`${styles.overlay} ${!shellVisible ? styles.shellHidden : ""}`}
+      style={{ height: splashHeight }}
     >
-      <div className={styles.content}>
+      <div className={`${styles.content} ${!bodyVisible ? styles.bodyHidden : ""}`}>
         <div className={styles.trophy}>🏆</div>
         <p className={styles.eyebrow}>CoverMyMeds · PCLT Presents</p>
         <h1 className={styles.title}>Employee<br />of the Month</h1>
@@ -70,10 +92,7 @@ export default function SplashScreen({ monthLabel, onDone }) {
         </blockquote>
 
         <div className={styles.barTrack}>
-          <div
-            className={styles.barFill}
-            style={{ width: barWidth }}
-          />
+          <div className={styles.barFill} style={{ width: barWidth }} />
         </div>
 
         <button className={styles.skip} onClick={dismiss}>skip →</button>

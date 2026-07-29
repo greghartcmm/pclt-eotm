@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { ROSTER, getVotingPeriod, ADMIN_TOKENS } from "./constants.js"
 import { resolveToken, getExistingVote } from "./supabase.js"
 import { FrameBar, Card, Note, Spinner, Button } from "./components/UI.jsx"
@@ -14,11 +14,15 @@ export default function App() {
   const [existingVote, setExistingVote] = useState(null)
   const [isAdminRoute, setIsAdminRoute] = useState(false)
   const [activeTab, setActiveTab] = useState("admin")
-  const [showSplash, setShowSplash] = useState(() => {
-    const params = new URLSearchParams(window.location.search)
-    return !!params.get("token")
-  })
 
+  const [showSplash, setShowSplash] = useState(() =>
+    !!new URLSearchParams(window.location.search).get("token")
+  )
+  const [mainVisible, setMainVisible] = useState(() =>
+    !new URLSearchParams(window.location.search).get("token")
+  )
+
+  const headerRef = useRef(null)
   const { monthKey, monthLabel, isClosed } = getVotingPeriod()
 
   useEffect(() => {
@@ -51,7 +55,6 @@ export default function App() {
 
       setVoterName(name)
 
-      // Only fetch existing vote if voting is open (not closed)
       if (!isClosed) {
         const existing = await getExistingVote(monthKey, name)
         if (existing) setExistingVote(existing)
@@ -70,7 +73,7 @@ export default function App() {
       <div className={styles.root}>
         <FrameBar />
         <div className={styles.wrapAdmin}>
-          <Header monthLabel={monthLabel} />
+          <AdminHeader monthLabel={monthLabel} />
 
           {appState === "admin-pin" && (
             <PinGate onUnlock={() => setAppState("admin")} />
@@ -107,60 +110,84 @@ export default function App() {
 
   // ── Voter route ───────────────────────────────────────────────────────────
   return (
-    <div className={styles.root}>
+    <div className={styles.voterRoot}>
       {showSplash && (
-        <SplashScreen monthLabel={monthLabel} onDone={() => setShowSplash(false)} />
+        <SplashScreen
+          monthLabel={monthLabel}
+          headerRef={headerRef}
+          onRevealPage={() => setMainVisible(true)}
+          onDone={() => setShowSplash(false)}
+        />
       )}
+
       <FrameBar />
-      <div className={styles.wrap}>
-        <Header monthLabel={monthLabel} />
-        <main>
-          {appState === "loading" && <Card><Spinner /></Card>}
 
-          {appState === "no-token" && (
-            <Card>
-              <h2 className={styles.setupH2}>No voting link detected</h2>
-              <p className={styles.setupSub}>
-                To vote, use the personalized link sent to you by your PCLT admin.
-              </p>
-            </Card>
-          )}
+      <header className={styles.headerStrip} ref={headerRef}>
+        <div className={styles.headerInner}>
+          <p className={styles.headerEyebrow}>CoverMyMeds · PCLT Team</p>
+          <h1 className={styles.headerH1}>
+            Employee of the <span className={styles.headerH1Amber}>Month</span>
+          </h1>
+          <p className={styles.headerMonthLine}>
+            <span className={styles.headerMonthValue}>{monthLabel}</span>
+          </p>
+          <p className={styles.headerDesc}>
+            Who picked up the tab, talked the team into a terrible idea, or did something vaguely worthy of this unserious but coveted award?
+          </p>
+        </div>
+      </header>
 
-          {appState === "invalid-token" && (
-            <Card>
-              <h2 className={styles.setupH2}>Link not recognized</h2>
-              <p className={styles.setupSub}>
-                This voting link isn't valid for {monthLabel}. Ask your admin to resend it.
-              </p>
-            </Card>
-          )}
+      <div className={`${styles.mainPage} ${mainVisible ? styles.mainVisible : ""}`}>
+        <div className={styles.wrap}>
+          <main>
+            {appState === "loading" && <Card><Spinner /></Card>}
 
-          {appState === "error" && (
-            <Card>
-              <Note variant="magenta">
-                Something went wrong. Please try again or contact your admin.
-              </Note>
-            </Card>
-          )}
+            {appState === "no-token" && (
+              <Card>
+                <h2 className={styles.setupH2}>No voting link detected</h2>
+                <p className={styles.setupSub}>
+                  To vote, use the personalized link sent to you by your PCLT admin.
+                </p>
+              </Card>
+            )}
 
-          {appState === "voter" && (
-            <VotingView
-              voterName={voterName}
-              monthKey={monthKey}
-              monthLabel={monthLabel}
-              existingVote={existingVote}
-              isClosed={isClosed}
-              onVoteCast={(choice) => setExistingVote(choice)}
-            />
-          )}
-        </main>
-        <footer className={styles.footer}>CoverMyMeds is a McKesson company.</footer>
+            {appState === "invalid-token" && (
+              <Card>
+                <h2 className={styles.setupH2}>Link not recognized</h2>
+                <p className={styles.setupSub}>
+                  This voting link isn't valid for {monthLabel}. Ask your admin to resend it.
+                </p>
+              </Card>
+            )}
+
+            {appState === "error" && (
+              <Card>
+                <Note variant="magenta">
+                  Something went wrong. Please try again or contact your admin.
+                </Note>
+              </Card>
+            )}
+
+            {appState === "voter" && (
+              <VotingView
+                voterName={voterName}
+                monthKey={monthKey}
+                monthLabel={monthLabel}
+                existingVote={existingVote}
+                isClosed={isClosed}
+                onVoteCast={(choice) => setExistingVote(choice)}
+              />
+            )}
+          </main>
+          <footer className={styles.footer}>CoverMyMeds is a McKesson company.</footer>
+        </div>
       </div>
     </div>
   )
 }
 
-function Header({ monthLabel }) {
+// Admin route keeps the original header style
+function AdminHeader({ monthLabel }) {
   return (
     <header className={styles.mast}>
       <div className={styles.eyebrow}>
@@ -170,14 +197,10 @@ function Header({ monthLabel }) {
       <div className={styles.period}>
         Recognizing our teammate for <strong>{monthLabel}</strong>
       </div>
-      <div className={styles.tagline}>
-        Who picked up the tab, talked the team into a terrible idea, convinced Chrissy of a crazy idea, or did something vaguely worthy of this unserious but coveted award? Give them your vote!
-      </div>
     </header>
   )
 }
 
-// ── Admin → Voting page tab: personal links for the 3 admins ─────────────────
 function AdminVotingLinks() {
   const base = `${window.location.origin}${window.location.pathname}`
 

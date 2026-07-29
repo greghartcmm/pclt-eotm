@@ -4,11 +4,11 @@
   gap: 10px;
   margin-bottom: 18px;
   padding: 10px 14px;
-  background: var(--orange-tint);
-  border: 1px solid #F6DEC9;
+  background: var(--teal-tint);
+  border: 1px solid #C8E8F4;
   border-radius: 10px;
 }
-.voterName { font-size: 14px; color: var(--ink); }
+.voterName { font-size: 14px; color: var(--navy); }
 
 .h2 {
   font-family: var(--serif);
@@ -28,15 +28,17 @@
 }
 
 @media (max-width: 679px) {
-  .grid {
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-  }
+  .grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+}
+@media (max-width: 560px) {
+  .grid { grid-template-columns: repeat(2, 1fr); }
 }
 
 .pick {
   text-align: left;
   background: var(--white);
   border: 1.5px solid var(--line);
+  border-left: 4px solid transparent;
   border-radius: 12px;
   padding: 14px;
   cursor: pointer;
@@ -48,15 +50,20 @@
   font: inherit;
   position: relative;
 }
-.pick:hover { border-color: var(--magenta); background: var(--magenta-tint); }
-.pick:focus-visible { outline: 2px solid var(--magenta); outline-offset: 2px; }
+.pick:hover {
+  border-color: var(--sky);
+  border-left-color: var(--sky);
+  background: #F5FBFD;
+}
+.pick:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
 .pick:disabled { opacity: .5; cursor: not-allowed; }
 
 .pickSelected {
-  border-color: var(--magenta);
-  background: var(--magenta-tint);
-  transform: translateY(-3px);
-  box-shadow: 0 6px 20px rgba(231, 8, 101, 0.13), 0 2px 8px rgba(29, 35, 41, 0.08);
+  border-color: var(--teal);
+  border-left: 4px solid var(--teal);
+  background: var(--teal-tint);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(33, 158, 188, 0.15);
   z-index: 1;
 }
 
@@ -64,7 +71,7 @@
 
 .chk {
   margin-left: auto;
-  color: var(--magenta);
+  color: var(--teal);
   opacity: 0;
   font-weight: 700;
   transition: opacity .12s;
@@ -74,9 +81,10 @@
 /* ── Inline expansion slot (desktop) ── */
 .expansionSlot {
   grid-column: 1 / -1;
-  background: var(--magenta-tint);
-  border: 1.5px solid var(--magenta);
-  border-radius: 12px;
+  background: var(--teal-tint);
+  border: 1.5px solid var(--teal-border);
+  border-left: 4px solid var(--teal);
+  border-radius: 10px;
   padding: 16px 18px;
   animation: expandIn .2s ease forwards;
 }
@@ -89,9 +97,10 @@
 .expansionLabel {
   font-size: 13px;
   font-weight: 700;
-  color: var(--ink);
   margin-bottom: 10px;
 }
+.expansionLabelName { color: var(--teal); }
+.expansionLabelSuffix { color: var(--muted); font-weight: 400; }
 
 .reasonTextarea {
   width: 100%;
@@ -99,18 +108,22 @@
   font-size: 14px;
   color: var(--ink);
   background: var(--white);
-  border: 1px solid var(--line);
+  border: 1.5px solid var(--teal-border);
   border-radius: 10px;
   padding: 10px 12px;
   resize: vertical;
   min-height: 72px;
   line-height: 1.5;
-  transition: border-color .12s;
+  transition: border-color .12s, box-shadow .12s;
 }
 .reasonTextarea:focus {
-  outline: 2px solid var(--magenta);
-  outline-offset: 2px;
-  border-color: var(--magenta);
+  outline: none;
+  border-color: var(--teal);
+  box-shadow: 0 0 0 3px rgba(33, 158, 188, 0.1);
+}
+.reasonTextarea::placeholder {
+  color: #9ECAD8;
+  font-style: italic;
 }
 
 .expansionFooter {
@@ -255,7 +268,7 @@
 
 .voProgressFill {
   height: 100%;
-  background: var(--magenta);
+  background: var(--teal);
   border-radius: 2px;
   width: 100%;
 }

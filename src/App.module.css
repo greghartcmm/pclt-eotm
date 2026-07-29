@@ -1,9 +1,81 @@
 .root { min-height: 100vh; }
 
+/* V2 voter page root — cool gray background */
+.voterRoot {
+  min-height: 100vh;
+  background: #F5F8FA;
+}
+
+/* V2 full-bleed navy header strip */
+.headerStrip {
+  background: var(--navy);
+  padding: 2.25rem 1.5rem 2.5rem;
+  text-align: center;
+}
+.headerInner {
+  max-width: 720px;
+  margin: 0 auto;
+}
+.headerEyebrow {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(142, 202, 230, 0.65);
+  margin: 0 0 14px;
+}
+.headerH1 {
+  font-family: var(--serif);
+  font-size: clamp(2rem, 5vw, 3.1rem);
+  font-weight: 700;
+  color: #fff;
+  margin: 0;
+  line-height: 1.1;
+  text-transform: uppercase;
+  letter-spacing: -0.01em;
+}
+.headerH1Amber {
+  color: var(--amber);
+  font-style: normal;
+}
+.headerMonthLine {
+  font-size: 0.87rem;
+  color: rgba(255, 255, 255, 0.45);
+  margin: 10px 0 8px;
+}
+.headerMonthValue {
+  color: var(--amber);
+  font-weight: 600;
+}
+.headerDesc {
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.38);
+  max-width: 460px;
+  margin: 0 auto;
+  line-height: 1.5;
+}
+
+/* Main page wrapper — starts hidden when splash is active */
+.mainPage {
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+.mainVisible {
+  opacity: 1;
+}
+
 .wrap {
   max-width: 720px;
   margin: 0 auto;
-  padding: 34px 20px 72px;
+  padding: 24px 20px 72px;
+}
+
+@media (max-width: 600px) {
+  .headerStrip { padding: 1.75rem 1.25rem 2rem; }
+  .headerH1 { font-size: 1.9rem; }
+}
+@media (max-width: 380px) {
+  .headerH1 { font-size: 1.65rem; }
 }
 
 .mast {

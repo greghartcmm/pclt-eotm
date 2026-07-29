@@ -59,6 +59,10 @@
 .btn_danger { background: var(--white); border-color: #EBC9C9; color: #B0203E; }
 .btn_danger:hover:not(:disabled) { background: #FBF0F3; }
 
+.btn_navy { background: var(--navy); color: var(--amber); }
+.btn_navy:hover:not(:disabled) { background: var(--teal); color: #fff; }
+.btn_navy:disabled { background: #8AABBC; color: #fff; cursor: not-allowed; filter: none; }
+
 .btn_block { width: 100%; }
 
 .note {
