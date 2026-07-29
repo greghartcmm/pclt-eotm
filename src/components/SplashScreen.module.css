@@ -62,11 +62,17 @@
 .title {
   margin: 0;
   font-family: var(--serif);
-  font-size: 42px;
+  font-size: clamp(2rem, 5vw, 3.1rem);
   font-weight: 700;
   line-height: 1.1;
   text-transform: uppercase;
+  letter-spacing: -0.01em;
   color: #fff;
+}
+
+.titleAmber {
+  color: var(--amber);
+  font-style: normal;
 }
 
 .tagline {

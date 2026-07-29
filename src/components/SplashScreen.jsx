@@ -81,7 +81,7 @@ export default function SplashScreen({ monthLabel, headerRef, onRevealPage, onDo
       <div className={`${styles.content} ${!bodyVisible ? styles.bodyHidden : ""}`}>
         <div className={styles.trophy}>🏆</div>
         <p className={styles.eyebrow}>CoverMyMeds · PCLT Presents</p>
-        <h1 className={styles.title}>Employee<br />of the Month</h1>
+        <h1 className={styles.title}>Employee of the <span className={styles.titleAmber}>Month</span></h1>
         <p className={styles.tagline}>{monthLabel} · The stakes could not be lower</p>
 
         <blockquote className={`${styles.quoteBlock} ${!quoteVisible ? styles.quoteHidden : ""}`}>
