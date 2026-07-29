@@ -95,7 +95,6 @@ export default function SplashScreen({ monthLabel, headerRef, onRevealPage, onDo
           <div className={styles.barFill} style={{ width: barWidth }} />
         </div>
 
-        <button className={styles.skip} onClick={dismiss}>skip →</button>
       </div>
     </div>
   )
