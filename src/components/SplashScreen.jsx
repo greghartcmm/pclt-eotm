@@ -18,26 +18,27 @@ const QUOTES = [
   { text: "Together, we achieve great things.\nToday, we are clicking on one of them.", attr: "Strategic Alignment Office" },
 ]
 
-const DURATION      = 2800  // total before dismiss
-const QUOTE_HOLD    = 1300  // how long each quote is visible
-const QUOTE_FADE    = 200   // half of the crossfade window
+const DURATION   = 2800
+const QUOTE_HOLD = 1300
+const QUOTE_FADE = 200
 
 export default function SplashScreen({ monthLabel, headerRef, onRevealPage, onDone }) {
   const [quotes] = useState(() => {
     const shuffled = [...QUOTES].sort(() => Math.random() - 0.5)
     return shuffled.slice(0, 2)
   })
-  const [quoteIndex, setQuoteIndex]   = useState(0)
+  const [quoteIndex, setQuoteIndex]     = useState(0)
   const [quoteVisible, setQuoteVisible] = useState(true)
-  const [bodyVisible, setBodyVisible]   = useState(true)
   const [splashHeight, setSplashHeight] = useState("100vh")
   const [shellVisible, setShellVisible] = useState(true)
   const [gone, setGone]                 = useState(false)
+  const [dismissing, setDismissing]     = useState(false)
+  const [titleTranslate, setTitleTranslate] = useState(0)
   const dismissedRef = useRef(false)
   const timerRef     = useRef(null)
+  const titleRef     = useRef(null)
 
   useEffect(() => {
-    // Crossfade to second quote at QUOTE_HOLD
     const t1 = setTimeout(() => {
       setQuoteVisible(false)
       setTimeout(() => {
@@ -59,16 +60,30 @@ export default function SplashScreen({ monthLabel, headerRef, onRevealPage, onDo
     dismissedRef.current = true
     clearTimeout(timerRef.current)
 
-    setBodyVisible(false)
+    // Measure before any state changes alter the DOM
+    const headerEl = headerRef?.current
+    const titleEl  = titleRef?.current
 
-    setTimeout(() => {
-      const headerEl = headerRef?.current
-      setSplashHeight(`${headerEl ? headerEl.getBoundingClientRect().bottom : 0}px`)
-    }, 80)
+    let titleDelta  = 0
+    let headerBottom = 0
 
-    setTimeout(() => onRevealPage(), 380)
-    setTimeout(() => setShellVisible(false), 760)
-    setTimeout(() => { setGone(true); onDone() }, 980)
+    if (headerEl) {
+      const headerRect = headerEl.getBoundingClientRect()
+      headerBottom = headerRect.bottom
+      if (titleEl) {
+        const headerPaddingTop = parseFloat(getComputedStyle(headerEl).paddingTop) || 36
+        titleDelta = (headerRect.top + headerPaddingTop) - titleEl.getBoundingClientRect().top
+      }
+    }
+
+    // Title glides to header position; decoratives fade out; main page reveals
+    setTitleTranslate(titleDelta)
+    setDismissing(true)
+    onRevealPage()
+
+    setTimeout(() => setSplashHeight(`${headerBottom}px`), 60)
+    setTimeout(() => setShellVisible(false), 680)
+    setTimeout(() => { setGone(true); onDone() }, 900)
   }
 
   if (gone) return null
@@ -78,13 +93,25 @@ export default function SplashScreen({ monthLabel, headerRef, onRevealPage, onDo
       className={`${styles.overlay} ${!shellVisible ? styles.shellHidden : ""}`}
       style={{ height: splashHeight }}
     >
-      <div className={`${styles.content} ${!bodyVisible ? styles.bodyHidden : ""}`}>
-        <div className={styles.trophy}>🏆</div>
-        <p className={styles.eyebrow}>CoverMyMeds · PCLT Presents</p>
-        <h1 className={styles.title}>Employee of the <span className={styles.titleAmber}>Month</span></h1>
-        <p className={styles.tagline}>{monthLabel} · The stakes could not be lower</p>
+      <div className={styles.content}>
+        <div className={`${styles.trophy} ${dismissing ? styles.fadeOut : ""}`}>🏆</div>
+        <p className={`${styles.eyebrow} ${dismissing ? styles.fadeOut : ""}`}>CoverMyMeds · PCLT Presents</p>
 
-        <blockquote className={`${styles.quoteBlock} ${!quoteVisible ? styles.quoteHidden : ""}`}>
+        <h1
+          ref={titleRef}
+          className={styles.title}
+          style={{ transform: `translateY(${titleTranslate}px)` }}
+        >
+          Employee of the <span className={styles.titleAmber}>Month</span>
+        </h1>
+
+        <p className={`${styles.tagline} ${dismissing ? styles.fadeOut : ""}`}>
+          {monthLabel} · The stakes could not be lower
+        </p>
+
+        <blockquote
+          className={`${styles.quoteBlock} ${!quoteVisible ? styles.quoteHidden : ""} ${dismissing ? styles.fadeOut : ""}`}
+        >
           <p className={styles.quoteText}>{quotes[quoteIndex].text}</p>
           <cite className={styles.quoteAttr}>— {quotes[quoteIndex].attr}</cite>
         </blockquote>
