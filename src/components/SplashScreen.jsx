@@ -18,23 +18,38 @@ const QUOTES = [
   { text: "Together, we achieve great things.\nToday, we are clicking on one of them.", attr: "Strategic Alignment Office" },
 ]
 
-const DURATION = 4500
+const DURATION      = 2800  // total before dismiss
+const QUOTE_HOLD    = 1300  // how long each quote is visible
+const QUOTE_FADE    = 200   // half of the crossfade window
 
 export default function SplashScreen({ monthLabel, headerRef, onRevealPage, onDone }) {
-  const [quote] = useState(() => QUOTES[Math.floor(Math.random() * QUOTES.length)])
-  const [barWidth, setBarWidth] = useState(0)
-  const [bodyVisible, setBodyVisible] = useState(true)
+  const [quotes] = useState(() => {
+    const shuffled = [...QUOTES].sort(() => Math.random() - 0.5)
+    return shuffled.slice(0, 2)
+  })
+  const [quoteIndex, setQuoteIndex]   = useState(0)
+  const [quoteVisible, setQuoteVisible] = useState(true)
+  const [bodyVisible, setBodyVisible]   = useState(true)
   const [splashHeight, setSplashHeight] = useState("100vh")
   const [shellVisible, setShellVisible] = useState(true)
-  const [gone, setGone] = useState(false)
-  const timerRef = useRef(null)
+  const [gone, setGone]                 = useState(false)
   const dismissedRef = useRef(false)
+  const timerRef     = useRef(null)
 
   useEffect(() => {
-    const raf = requestAnimationFrame(() => setBarWidth(250))
+    // Crossfade to second quote at QUOTE_HOLD
+    const t1 = setTimeout(() => {
+      setQuoteVisible(false)
+      setTimeout(() => {
+        setQuoteIndex(1)
+        setQuoteVisible(true)
+      }, QUOTE_FADE)
+    }, QUOTE_HOLD)
+
     timerRef.current = setTimeout(() => dismiss(), DURATION)
+
     return () => {
-      cancelAnimationFrame(raf)
+      clearTimeout(t1)
       clearTimeout(timerRef.current)
     }
   }, [])
@@ -44,33 +59,16 @@ export default function SplashScreen({ monthLabel, headerRef, onRevealPage, onDo
     dismissedRef.current = true
     clearTimeout(timerRef.current)
 
-    // Step 1 (0ms): fade body content
     setBodyVisible(false)
 
-    // Step 2 (80ms): collapse height to match header strip
     setTimeout(() => {
       const headerEl = headerRef?.current
-      const targetHeight = headerEl
-        ? headerEl.getBoundingClientRect().bottom
-        : 0
-      setSplashHeight(`${targetHeight}px`)
+      setSplashHeight(`${headerEl ? headerEl.getBoundingClientRect().bottom : 0}px`)
     }, 80)
 
-    // Step 3 (380ms): reveal main page content
-    setTimeout(() => {
-      onRevealPage()
-    }, 380)
-
-    // Step 4 (760ms): fade the shell
-    setTimeout(() => {
-      setShellVisible(false)
-    }, 760)
-
-    // Step 5 (980ms): done — remove from DOM
-    setTimeout(() => {
-      setGone(true)
-      onDone()
-    }, 980)
+    setTimeout(() => onRevealPage(), 380)
+    setTimeout(() => setShellVisible(false), 760)
+    setTimeout(() => { setGone(true); onDone() }, 980)
   }
 
   if (gone) return null
@@ -86,15 +84,10 @@ export default function SplashScreen({ monthLabel, headerRef, onRevealPage, onDo
         <h1 className={styles.title}>Employee<br />of the Month</h1>
         <p className={styles.tagline}>{monthLabel} · The stakes could not be lower</p>
 
-        <blockquote className={styles.quoteBlock}>
-          <p className={styles.quoteText}>{quote.text}</p>
-          <cite className={styles.quoteAttr}>— {quote.attr}</cite>
+        <blockquote className={`${styles.quoteBlock} ${!quoteVisible ? styles.quoteHidden : ""}`}>
+          <p className={styles.quoteText}>{quotes[quoteIndex].text}</p>
+          <cite className={styles.quoteAttr}>— {quotes[quoteIndex].attr}</cite>
         </blockquote>
-
-        <div className={styles.barTrack}>
-          <div className={styles.barFill} style={{ width: barWidth }} />
-        </div>
-
       </div>
     </div>
   )

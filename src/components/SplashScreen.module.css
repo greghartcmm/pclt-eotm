@@ -10,13 +10,17 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  /* height collapses during dismiss; opacity fades at end */
   transition: height 0.65s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease;
 }
 
 .shellHidden {
   opacity: 0;
   pointer-events: none;
+}
+
+@keyframes contentIn {
+  from { opacity: 0; transform: scale(0.97); }
+  to   { opacity: 1; transform: scale(1); }
 }
 
 .content {
@@ -27,6 +31,7 @@
   padding: 32px 24px;
   max-width: 520px;
   gap: 12px;
+  animation: contentIn 0.45s ease forwards;
   transition: opacity 0.25s ease;
 }
 
@@ -75,6 +80,11 @@
   margin: 8px 0 4px;
   padding: 0;
   border: none;
+  transition: opacity 0.2s ease;
+}
+
+.quoteHidden {
+  opacity: 0;
 }
 
 .quoteText {
@@ -92,35 +102,3 @@
   color: var(--sky);
   font-variant: normal;
 }
-
-.barTrack {
-  width: 250px;
-  height: 3px;
-  background: rgba(255, 255, 255, 0.15);
-  border-radius: 2px;
-  overflow: hidden;
-  margin-top: 4px;
-}
-
-.barFill {
-  height: 100%;
-  background: var(--amber);
-  border-radius: 2px;
-  width: 0;
-  transition: width 4.5s linear;
-}
-
-.skip {
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--sky);
-  opacity: 0.35;
-  padding: 4px 0;
-  transition: opacity 0.15s;
-}
-.skip:hover { opacity: 0.75; }
