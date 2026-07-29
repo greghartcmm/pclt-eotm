@@ -85,7 +85,7 @@ export default function SplashScreen({ monthLabel, headerRef, onRevealPage, onDo
         <p className={`${styles.eyebrow} ${dismissing ? styles.fadeOut : ""}`}>CoverMyMeds · PCLT Presents</p>
 
         <h1 className={styles.title}>
-          Employee of the <span className={styles.titleAmber}>Month</span>
+          Employee of the<br /><span className={styles.titleAmber}>Month</span>
         </h1>
 
         <p className={`${styles.tagline} ${dismissing ? styles.fadeOut : ""}`}>

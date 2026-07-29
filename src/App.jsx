@@ -126,7 +126,7 @@ export default function App() {
         <div className={styles.headerInner}>
           <p className={styles.headerEyebrow}>CoverMyMeds · PCLT Team</p>
           <h1 className={styles.headerH1}>
-            Employee of the <span className={styles.headerH1Amber}>Month</span>
+            Employee of the<br /><span className={styles.headerH1Amber}>Month</span>
           </h1>
           <p className={styles.headerMonthLine}>
             <span className={styles.headerMonthValue}>{monthLabel}</span>
