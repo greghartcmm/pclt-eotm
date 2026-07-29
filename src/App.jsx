@@ -182,7 +182,6 @@ export default function App() {
               />
             )}
           </main>
-          <footer className={styles.footer}>CoverMyMeds is a McKesson company.</footer>
         </div>
       </div>
     </div>
