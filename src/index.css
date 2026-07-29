@@ -24,6 +24,10 @@
 
 *, *::before, *::after { box-sizing: border-box; }
 
+html {
+  scrollbar-gutter: stable;
+}
+
 html, body {
   margin: 0;
   padding: 0;
