@@ -168,4 +168,8 @@ using (true);
 
 <!-- Move completed entries here once Greg deploys them, changing Status to Shipped and adding a deploy date. -->
 
-*Nothing shipped via this file yet.*
+### Auto-dismiss splash screen with demotivational quote
+- **Status:** Shipped 2026-07-28
+- **Description:** Full-screen navy splash on voter page load — random demotivational quote (14 pool), 4-second amber progress bar countdown, floating trophy emoji, skip link. Fades out with scale transition and reveals ballot.
+- **Scope:** Voter page — page load only
+- **Approved by:** Greg Hart
