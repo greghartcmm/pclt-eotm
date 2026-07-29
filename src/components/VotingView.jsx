@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef, useEffect, Fragment } from "react"
 import { ROSTER } from "../constants.js"
 import { castVote } from "../supabase.js"
 import { Avatar, Card, Button, Note, Spinner } from "./UI.jsx"
@@ -7,6 +7,7 @@ import styles from "./VotingView.module.css"
 const VO_COLORS = ['#FF8F1C','#E70865','#01426A','#008AD8','#00B37E','#9B59B6']
 const VO_DIRS   = [[-36,-52],[-16,-62],[0,-65],[16,-62],[36,-52],[-54,-28],[-60,-6],[-54,16],[54,-28],[60,-6],[54,16],[-28,38],[0,48],[28,38]]
 const MAX_REASON = 80
+const COLS = 3
 
 function useIsMobile() {
   const [mobile, setMobile] = useState(() => window.innerWidth < 680)
@@ -32,6 +33,12 @@ export default function VotingView({ voterName, monthKey, monthLabel, existingVo
   const candidates = ROSTER.filter(n => n !== voterName)
   const isChanging = !!confirmedVote
   const hasNewPick = picked !== confirmedVote
+
+  // Split candidates into rows for the inline expansion slot
+  const rows = []
+  for (let i = 0; i < candidates.length; i += COLS) {
+    rows.push(candidates.slice(i, i + COLS))
+  }
 
   // ── Voting closed ────────────────────────────────────────────────────────
   if (isClosed) {
@@ -101,7 +108,7 @@ export default function VotingView({ voterName, monthKey, monthLabel, existingVo
     dismissTimer.current = setTimeout(() => setOverlayVisible(false), 2600)
   }
 
-  function buttonLabel() {
+  function mobileButtonLabel() {
     if (status === "submitting") return "Saving…"
     if (!picked)       return "Select someone to vote"
     if (!isChanging)   return `Cast vote for ${picked}`
@@ -125,69 +132,69 @@ export default function VotingView({ voterName, monthKey, monthLabel, existingVo
         </p>
 
         <div className={styles.grid}>
-          {candidates.map(name => (
-            <button
-              key={name}
-              className={`${styles.pick} ${picked === name ? styles.pickSelected : ""}`}
-              aria-pressed={picked === name}
-              onClick={() => { setPicked(name); setReason("") }}
-              disabled={status === "submitting"}
-            >
-              <Avatar name={name} size={38} />
-              <span className={styles.nm}>{name}</span>
-              <span className={styles.chk} aria-hidden>✓</span>
-            </button>
+          {rows.map((row, rowIdx) => (
+            <Fragment key={rowIdx}>
+              {row.map(name => (
+                <button
+                  key={name}
+                  className={`${styles.pick} ${picked === name ? styles.pickSelected : ""}`}
+                  aria-pressed={picked === name}
+                  onClick={() => { setPicked(name); setReason("") }}
+                  disabled={status === "submitting"}
+                >
+                  <Avatar name={name} size={38} />
+                  <span className={styles.nm}>{name}</span>
+                  <span className={styles.chk} aria-hidden>✓</span>
+                </button>
+              ))}
+
+              {/* Desktop: expansion slot opens below the row containing the picked candidate */}
+              {!isMobile && picked && hasNewPick && row.includes(picked) && (
+                <div className={styles.expansionSlot}>
+                  <div className={styles.expansionLabel}>
+                    What did {picked.split(" ")[0]} do that deserves this?
+                  </div>
+                  <textarea
+                    className={styles.reasonTextarea}
+                    rows={3}
+                    maxLength={MAX_REASON}
+                    placeholder="They actually read the pre-read. They fixed the thing nobody else would touch. They talked Chrissy into it."
+                    value={reason}
+                    onChange={e => setReason(e.target.value)}
+                    autoFocus
+                  />
+                  <div className={styles.expansionFooter}>
+                    <span className={styles.shownNote}>Shown to the team when the winner is announced</span>
+                    <div className={styles.expansionActions}>
+                      <span className={styles.charCount}>{reason.length} / {MAX_REASON}</span>
+                      {status === "submitting" ? <Spinner /> : (
+                        <Button variant="primary" onClick={() => handleCast(reason)}>
+                          {isChanging
+                            ? `Change vote to ${picked.split(" ")[0]}`
+                            : `Vote for ${picked.split(" ")[0]}`}
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </Fragment>
           ))}
         </div>
 
-        {/* Desktop: inline reason field appears after picking */}
-        {!isMobile && picked && hasNewPick && (
-          <div className={styles.reasonSection}>
-            <div className={styles.reasonLabel}>
-              Why {picked.split(" ")[0]}?
-              <span className={styles.optionalPill}>optional</span>
-            </div>
-            <textarea
-              className={styles.reasonTextarea}
-              rows={3}
-              maxLength={MAX_REASON}
-              placeholder="She actually convinced Chrissy of something. We still don't know how."
-              value={reason}
-              onChange={e => setReason(e.target.value)}
-            />
-            <div className={styles.charCount}>{reason.length} / {MAX_REASON}</div>
-          </div>
-        )}
-
         {status === "error" && <Note variant="magenta">{errorMsg}</Note>}
 
-        {/* Desktop cast button */}
-        {!isMobile && (
-          status === "submitting" ? <Spinner /> : (
-            <div className={styles.actions}>
-              <Button
-                variant="primary"
-                block
-                disabled={!picked || (isChanging && !hasNewPick)}
-                onClick={() => handleCast(reason)}
-              >
-                {buttonLabel()}
-              </Button>
-            </div>
-          )
-        )}
-
-        {/* Mobile: button opens sheet; if no change, disabled */}
+        {/* Mobile: button opens sheet; disabled states */}
         {isMobile && picked && hasNewPick && !sheetOpen && (
           <div className={styles.actions}>
             <Button variant="primary" block onClick={() => setSheetOpen(true)}>
-              {buttonLabel()}
+              {mobileButtonLabel()}
             </Button>
           </div>
         )}
         {isMobile && (!picked || (isChanging && !hasNewPick)) && (
           <div className={styles.actions}>
-            <Button variant="primary" block disabled>{buttonLabel()}</Button>
+            <Button variant="primary" block disabled>{mobileButtonLabel()}</Button>
           </div>
         )}
 
@@ -227,19 +234,19 @@ export default function VotingView({ voterName, monthKey, monthLabel, existingVo
               <span className={styles.sheetName}>{picked}</span>
             </div>
             <p className={styles.sheetPrompt}>
-              Why {picked.split(" ")[0]}?
-              <span className={styles.optionalPill}>optional</span>
+              What did {picked.split(" ")[0]} do that deserves this?
             </p>
             <textarea
               className={styles.reasonTextarea}
               rows={3}
               maxLength={MAX_REASON}
-              placeholder="She actually convinced Chrissy of something. We still don't know how."
+              placeholder="They actually read the pre-read. They fixed the thing nobody else would touch. They talked Chrissy into it."
               value={reason}
               onChange={e => setReason(e.target.value)}
               autoFocus
             />
             <div className={styles.charCount}>{reason.length} / {MAX_REASON}</div>
+            <p className={styles.shownNote}>Shown to the team when the winner is announced</p>
             <div className={styles.sheetActions}>
               <Button variant="ghost" onClick={() => handleCast(null)} disabled={status === "submitting"}>
                 {status === "submitting" ? "Saving…" : "Skip"}

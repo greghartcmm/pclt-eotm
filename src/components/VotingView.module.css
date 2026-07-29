@@ -19,11 +19,18 @@
 }
 .sub { color: var(--muted); font-size: 14px; margin: 0 0 18px; }
 
+/* Fixed 3-column grid on desktop so expansion slot always opens below the correct row */
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(155px, 1fr));
+  grid-template-columns: repeat(3, 1fr);
   gap: 10px;
   margin-top: 6px;
+}
+
+@media (max-width: 679px) {
+  .grid {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  }
 }
 
 .pick {
@@ -36,15 +43,22 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  transition: border-color .12s, background .12s;
+  transition: border-color .12s, background .12s, transform .18s ease, box-shadow .18s ease;
   color: var(--ink);
   font: inherit;
+  position: relative;
 }
 .pick:hover { border-color: var(--magenta); background: var(--magenta-tint); }
 .pick:focus-visible { outline: 2px solid var(--magenta); outline-offset: 2px; }
 .pick:disabled { opacity: .5; cursor: not-allowed; }
 
-.pickSelected { border-color: var(--magenta); background: var(--magenta-tint); }
+.pickSelected {
+  border-color: var(--magenta);
+  background: var(--magenta-tint);
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(231, 8, 101, 0.13), 0 2px 8px rgba(29, 35, 41, 0.08);
+  z-index: 1;
+}
 
 .nm { font-weight: 700; font-size: 14px; line-height: 1.2; flex: 1; }
 
@@ -57,34 +71,28 @@
 }
 .pickSelected .chk { opacity: 1; }
 
-/* ── Reason field (desktop inline) ── */
-.reasonSection {
-  margin-top: 18px;
-  animation: fadeSlideIn .18s ease forwards;
+/* ── Inline expansion slot (desktop) ── */
+.expansionSlot {
+  grid-column: 1 / -1;
+  background: var(--magenta-tint);
+  border: 1.5px solid var(--magenta);
+  border-radius: 12px;
+  padding: 16px 18px;
+  animation: expandIn .2s ease forwards;
 }
-@keyframes fadeSlideIn {
+
+@keyframes expandIn {
   from { opacity: 0; transform: translateY(-6px); }
   to   { opacity: 1; transform: translateY(0); }
 }
-.reasonLabel {
+
+.expansionLabel {
   font-size: 13px;
   font-weight: 700;
   color: var(--ink);
-  margin-bottom: 8px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  margin-bottom: 10px;
 }
-.optionalPill {
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: .06em;
-  color: var(--muted);
-  background: var(--line);
-  border-radius: 20px;
-  padding: 2px 8px;
-}
+
 .reasonTextarea {
   width: 100%;
   font: inherit;
@@ -104,11 +112,33 @@
   outline-offset: 2px;
   border-color: var(--magenta);
 }
+
+.expansionFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+.shownNote {
+  font-size: 11px;
+  color: var(--muted);
+  font-style: italic;
+  flex-shrink: 0;
+}
+
+.expansionActions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-left: auto;
+}
+
 .charCount {
   font-size: 12px;
   color: var(--muted);
-  text-align: right;
-  margin-top: 4px;
 }
 
 .actions { margin-top: 18px; }
@@ -278,9 +308,6 @@
   font-weight: 700;
   color: var(--ink);
   margin: 0 0 10px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
 }
 
 .sheetActions {
