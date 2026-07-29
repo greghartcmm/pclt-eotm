@@ -6,7 +6,7 @@ import styles from "./VotingView.module.css"
 
 const VO_COLORS = ['#FF8F1C','#E70865','#01426A','#008AD8','#00B37E','#9B59B6']
 const VO_DIRS   = [[-36,-52],[-16,-62],[0,-65],[16,-62],[36,-52],[-54,-28],[-60,-6],[-54,16],[54,-28],[60,-6],[54,16],[-28,38],[0,48],[28,38]]
-const MAX_REASON = 80
+const MAX_REASON = 150
 
 function useIsMobile() {
   const [mobile, setMobile] = useState(() => window.innerWidth < 680)
