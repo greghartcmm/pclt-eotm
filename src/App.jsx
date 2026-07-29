@@ -132,7 +132,7 @@ export default function App() {
             <span className={styles.headerMonthValue}>{monthLabel}</span>
           </p>
           <p className={styles.headerDesc}>
-            Who picked up the tab, talked the team into a terrible idea, or did something vaguely worthy of this unserious but coveted award?
+            Who picked up the tab, talked the team into a terrible idea, or did something vaguely worthy of this unserious but coveted award? Votes must be in by EOD on the 5th.
           </p>
         </div>
       </header>
