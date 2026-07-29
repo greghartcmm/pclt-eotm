@@ -29,7 +29,7 @@
   align-items: center;
   text-align: center;
   padding: 32px 24px;
-  max-width: 520px;
+  max-width: 720px;
   gap: 12px;
   animation: contentIn 0.45s ease forwards;
 }
