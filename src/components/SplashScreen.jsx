@@ -29,14 +29,12 @@ export default function SplashScreen({ monthLabel, headerRef, onRevealPage, onDo
   })
   const [quoteIndex, setQuoteIndex]     = useState(0)
   const [quoteVisible, setQuoteVisible] = useState(true)
+  const [bodyVisible, setBodyVisible]   = useState(true)
   const [splashHeight, setSplashHeight] = useState("100vh")
   const [shellVisible, setShellVisible] = useState(true)
   const [gone, setGone]                 = useState(false)
-  const [dismissing, setDismissing]     = useState(false)
-  const [titleTranslate, setTitleTranslate] = useState(0)
   const dismissedRef = useRef(false)
   const timerRef     = useRef(null)
-  const titleRef     = useRef(null)
 
   useEffect(() => {
     const t1 = setTimeout(() => {
@@ -60,30 +58,16 @@ export default function SplashScreen({ monthLabel, headerRef, onRevealPage, onDo
     dismissedRef.current = true
     clearTimeout(timerRef.current)
 
-    // Measure before any state changes alter the DOM
     const headerEl = headerRef?.current
-    const titleEl  = titleRef?.current
+    const headerBottom = headerEl ? headerEl.getBoundingClientRect().bottom : 0
 
-    let titleDelta  = 0
-    let headerBottom = 0
-
-    if (headerEl) {
-      const headerRect = headerEl.getBoundingClientRect()
-      headerBottom = headerRect.bottom
-      if (titleEl) {
-        const headerPaddingTop = parseFloat(getComputedStyle(headerEl).paddingTop) || 36
-        titleDelta = (headerRect.top + headerPaddingTop) - titleEl.getBoundingClientRect().top
-      }
-    }
-
-    // Title glides to header position; decoratives fade out; main page reveals
-    setTitleTranslate(titleDelta)
-    setDismissing(true)
+    // Fade content and reveal main page at the same time — no gap
+    setBodyVisible(false)
     onRevealPage()
 
-    setTimeout(() => setSplashHeight(`${headerBottom}px`), 60)
-    setTimeout(() => setShellVisible(false), 680)
-    setTimeout(() => { setGone(true); onDone() }, 900)
+    setTimeout(() => setSplashHeight(`${headerBottom}px`), 80)
+    setTimeout(() => setShellVisible(false), 760)
+    setTimeout(() => { setGone(true); onDone() }, 980)
   }
 
   if (gone) return null
@@ -93,25 +77,14 @@ export default function SplashScreen({ monthLabel, headerRef, onRevealPage, onDo
       className={`${styles.overlay} ${!shellVisible ? styles.shellHidden : ""}`}
       style={{ height: splashHeight }}
     >
-      <div className={styles.content}>
-        <div className={`${styles.trophy} ${dismissing ? styles.fadeOut : ""}`}>🏆</div>
-        <p className={`${styles.eyebrow} ${dismissing ? styles.fadeOut : ""}`}>CoverMyMeds · PCLT Presents</p>
-
-        <h1
-          ref={titleRef}
-          className={styles.title}
-          style={{ transform: `translateY(${titleTranslate}px)` }}
-        >
+      <div className={`${styles.content} ${!bodyVisible ? styles.bodyHidden : ""}`}>
+        <div className={styles.trophy}>🏆</div>
+        <p className={styles.eyebrow}>CoverMyMeds · PCLT Presents</p>
+        <h1 className={styles.title}>
           Employee of the <span className={styles.titleAmber}>Month</span>
         </h1>
-
-        <p className={`${styles.tagline} ${dismissing ? styles.fadeOut : ""}`}>
-          {monthLabel} · The stakes could not be lower
-        </p>
-
-        <blockquote
-          className={`${styles.quoteBlock} ${!quoteVisible ? styles.quoteHidden : ""} ${dismissing ? styles.fadeOut : ""}`}
-        >
+        <p className={styles.tagline}>{monthLabel} · The stakes could not be lower</p>
+        <blockquote className={`${styles.quoteBlock} ${!quoteVisible ? styles.quoteHidden : ""}`}>
           <p className={styles.quoteText}>{quotes[quoteIndex].text}</p>
           <cite className={styles.quoteAttr}>— {quotes[quoteIndex].attr}</cite>
         </blockquote>

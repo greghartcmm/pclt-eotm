@@ -32,6 +32,11 @@
   max-width: 520px;
   gap: 12px;
   animation: contentIn 0.45s ease forwards;
+  transition: opacity 0.3s ease;
+}
+
+.bodyHidden {
+  opacity: 0;
 }
 
 @keyframes floatbob {
@@ -43,7 +48,6 @@
   font-size: 48px;
   animation: floatbob 3s ease-in-out infinite;
   line-height: 1;
-  transition: opacity 0.2s ease;
 }
 
 .eyebrow {
@@ -53,7 +57,6 @@
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--amber);
-  transition: opacity 0.2s ease;
 }
 
 .title {
@@ -65,8 +68,6 @@
   text-transform: uppercase;
   letter-spacing: -0.01em;
   color: #fff;
-  /* Animates to header position on dismiss */
-  transition: transform 0.45s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .titleAmber {
@@ -79,7 +80,6 @@
   font-size: 13px;
   color: rgba(255, 255, 255, 0.5);
   letter-spacing: 0.04em;
-  transition: opacity 0.2s ease;
 }
 
 .quoteBlock {
@@ -89,13 +89,7 @@
   transition: opacity 0.2s ease;
 }
 
-/* Cycling fade between quotes */
 .quoteHidden {
-  opacity: 0;
-}
-
-/* All decorative elements fade on dismiss */
-.fadeOut {
   opacity: 0;
 }
 
