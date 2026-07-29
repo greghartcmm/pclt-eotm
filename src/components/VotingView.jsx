@@ -152,13 +152,13 @@ export default function VotingView({ voterName, monthKey, monthLabel, existingVo
               {!isMobile && picked && hasNewPick && row.includes(picked) && (
                 <div className={styles.expansionSlot}>
                   <div className={styles.expansionLabel}>
-                    What did {picked.split(" ")[0]} do that deserves this?
+                    Why {picked.split(" ")[0]}? They'll read this. Make it worth it.
                   </div>
                   <textarea
                     className={styles.reasonTextarea}
                     rows={3}
                     maxLength={MAX_REASON}
-                    placeholder="They actually read the pre-read. They fixed the thing nobody else would touch. They talked Chrissy into it."
+                    placeholder=""
                     value={reason}
                     onChange={e => setReason(e.target.value)}
                     autoFocus
@@ -234,13 +234,13 @@ export default function VotingView({ voterName, monthKey, monthLabel, existingVo
               <span className={styles.sheetName}>{picked}</span>
             </div>
             <p className={styles.sheetPrompt}>
-              What did {picked.split(" ")[0]} do that deserves this?
+              Why {picked.split(" ")[0]}? They'll read this. Make it worth it.
             </p>
             <textarea
               className={styles.reasonTextarea}
               rows={3}
               maxLength={MAX_REASON}
-              placeholder="They actually read the pre-read. They fixed the thing nobody else would touch. They talked Chrissy into it."
+              placeholder=""
               value={reason}
               onChange={e => setReason(e.target.value)}
               autoFocus
