@@ -7,7 +7,6 @@ import styles from "./VotingView.module.css"
 const VO_COLORS = ['#FF8F1C','#E70865','#01426A','#008AD8','#00B37E','#9B59B6']
 const VO_DIRS   = [[-36,-52],[-16,-62],[0,-65],[16,-62],[36,-52],[-54,-28],[-60,-6],[-54,16],[54,-28],[60,-6],[54,16],[-28,38],[0,48],[28,38]]
 const MAX_REASON = 80
-const COLS = 3
 
 function useIsMobile() {
   const [mobile, setMobile] = useState(() => window.innerWidth < 680)
@@ -23,12 +22,13 @@ export default function VotingView({ voterName, monthKey, monthLabel, existingVo
   const [picked, setPicked]           = useState(existingVote || null)
   const [confirmedVote, setConfirmed] = useState(existingVote || null)
   const [reason, setReason]           = useState("")
-  const [sheetOpen, setSheetOpen]     = useState(false)
+
   const [status, setStatus]           = useState("idle")
   const [errorMsg, setErrorMsg]       = useState("")
   const [overlayVisible, setOverlayVisible] = useState(false)
   const dismissTimer = useRef(null)
   const isMobile = useIsMobile()
+  const COLS = isMobile ? 2 : 3
 
   const candidates = ROSTER.filter(n => n !== voterName)
   const isChanging = !!confirmedVote
@@ -57,7 +57,6 @@ export default function VotingView({ voterName, monthKey, monthLabel, existingVo
     if (!picked || status === "submitting") return
     setStatus("submitting")
     setErrorMsg("")
-    setSheetOpen(false)
 
     const result = await castVote(monthKey, voterName, picked, reasonArg || null)
 
@@ -131,7 +130,7 @@ export default function VotingView({ voterName, monthKey, monthLabel, existingVo
                   key={name}
                   className={`${styles.pick} ${picked === name ? styles.pickSelected : ""}`}
                   aria-pressed={picked === name}
-                  onClick={() => { setPicked(name); setReason(""); if (isMobile) setSheetOpen(true) }}
+                  onClick={() => { setPicked(name); setReason("") }}
                   disabled={status === "submitting"}
                 >
                   <Avatar name={name} size={38} />
@@ -140,8 +139,7 @@ export default function VotingView({ voterName, monthKey, monthLabel, existingVo
                 </button>
               ))}
 
-              {/* Desktop: expansion slot opens below the row containing the picked candidate */}
-              {!isMobile && picked && hasNewPick && row.includes(picked) && (
+              {picked && hasNewPick && row.includes(picked) && (
                 <div className={styles.expansionSlot}>
                   <div className={styles.expansionLabel}>
                     <span className={styles.expansionLabelName}>Why {picked.split(" ")[0]}?</span>
@@ -204,40 +202,6 @@ export default function VotingView({ voterName, monthKey, monthLabel, existingVo
         )}
       </Card>
 
-      {/* Mobile bottom sheet */}
-      {isMobile && sheetOpen && (
-        <div className={styles.backdrop} onClick={() => setSheetOpen(false)}>
-          <div className={styles.sheet} onClick={e => e.stopPropagation()}>
-            <div className={styles.sheetHandle} />
-            <div className={styles.sheetWho}>
-              <Avatar name={picked} size={30} />
-              <span className={styles.sheetName}>{picked}</span>
-            </div>
-            <p className={styles.sheetPrompt}>
-              Why {picked.split(" ")[0]}? They'll read this. Make it worth it.
-            </p>
-            <textarea
-              className={styles.reasonTextarea}
-              rows={3}
-              maxLength={MAX_REASON}
-              placeholder=""
-              value={reason}
-              onChange={e => setReason(e.target.value)}
-              autoFocus
-            />
-            <div className={styles.charCount}>{reason.length} / {MAX_REASON}</div>
-            <p className={styles.shownNote}>Shown to the team when the winner is announced</p>
-            <div className={styles.sheetActions}>
-              <Button variant="ghost" onClick={() => handleCast(null)} disabled={status === "submitting"}>
-                {status === "submitting" ? "Saving…" : "Skip"}
-              </Button>
-              <Button variant="navy" onClick={() => handleCast(reason)} disabled={status === "submitting"}>
-                {status === "submitting" ? "Saving…" : `Vote for ${picked.split(" ")[0]}`}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
     </>
   )
 }
