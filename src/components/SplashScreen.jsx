@@ -29,10 +29,10 @@ export default function SplashScreen({ monthLabel, headerRef, onRevealPage, onDo
   })
   const [quoteIndex, setQuoteIndex]     = useState(0)
   const [quoteVisible, setQuoteVisible] = useState(true)
-  const [bodyVisible, setBodyVisible]   = useState(true)
   const [splashHeight, setSplashHeight] = useState("100vh")
   const [shellVisible, setShellVisible] = useState(true)
   const [gone, setGone]                 = useState(false)
+  const [dismissing, setDismissing]     = useState(false)
   const dismissedRef = useRef(false)
   const timerRef     = useRef(null)
 
@@ -61,13 +61,16 @@ export default function SplashScreen({ monthLabel, headerRef, onRevealPage, onDo
     const headerEl = headerRef?.current
     const headerBottom = headerEl ? headerEl.getBoundingClientRect().bottom : 0
 
-    // Fade content and reveal main page at the same time — no gap
-    setBodyVisible(false)
+    // Fade decoratives only — title stays visible and rides up as the overlay collapses.
+    // With align-items:center, a ~380px content block in a ~280px collapsed overlay leaves
+    // the title at roughly the same y-position as the real header h1. The shell then fades
+    // slowly (0.5s) to crossfade between the two nearly-identical positions.
+    setDismissing(true)
     onRevealPage()
 
     setTimeout(() => setSplashHeight(`${headerBottom}px`), 80)
     setTimeout(() => setShellVisible(false), 760)
-    setTimeout(() => { setGone(true); onDone() }, 980)
+    setTimeout(() => { setGone(true); onDone() }, 1080)
   }
 
   if (gone) return null
@@ -77,14 +80,20 @@ export default function SplashScreen({ monthLabel, headerRef, onRevealPage, onDo
       className={`${styles.overlay} ${!shellVisible ? styles.shellHidden : ""}`}
       style={{ height: splashHeight }}
     >
-      <div className={`${styles.content} ${!bodyVisible ? styles.bodyHidden : ""}`}>
-        <div className={styles.trophy}>🏆</div>
-        <p className={styles.eyebrow}>CoverMyMeds · PCLT Presents</p>
+      <div className={styles.content}>
+        <div className={`${styles.trophy} ${dismissing ? styles.fadeOut : ""}`}>🏆</div>
+        <p className={`${styles.eyebrow} ${dismissing ? styles.fadeOut : ""}`}>CoverMyMeds · PCLT Presents</p>
+
         <h1 className={styles.title}>
           Employee of the <span className={styles.titleAmber}>Month</span>
         </h1>
-        <p className={styles.tagline}>{monthLabel} · The stakes could not be lower</p>
-        <blockquote className={`${styles.quoteBlock} ${!quoteVisible ? styles.quoteHidden : ""}`}>
+
+        <p className={`${styles.tagline} ${dismissing ? styles.fadeOut : ""}`}>
+          {monthLabel} · The stakes could not be lower
+        </p>
+        <blockquote
+          className={`${styles.quoteBlock} ${!quoteVisible ? styles.quoteHidden : ""} ${dismissing ? styles.fadeOut : ""}`}
+        >
           <p className={styles.quoteText}>{quotes[quoteIndex].text}</p>
           <cite className={styles.quoteAttr}>— {quotes[quoteIndex].attr}</cite>
         </blockquote>
