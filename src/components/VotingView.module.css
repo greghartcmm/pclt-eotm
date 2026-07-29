@@ -165,6 +165,7 @@
 .voteOverlay {
   position: absolute;
   inset: 0;
+  z-index: 2;
   border-radius: var(--radius);
   background: var(--white);
   display: flex;
