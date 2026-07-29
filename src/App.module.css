@@ -54,6 +54,12 @@
   margin: 0 auto;
   line-height: 1.5;
 }
+.headerDeadline {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--amber);
+  margin: 6px auto 0;
+}
 
 /* Main page wrapper — starts hidden when splash is active */
 .mainPage {
