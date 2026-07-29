@@ -20,10 +20,21 @@ export const ADMINS = ["Bridget Readey", "Greg Hart", "Megan Wetzel"]
 // CMM brand avatar palette
 export const PALETTE = ["#FF8F1C", "#E70865", "#01426A", "#008AD8"]
 
+// Shuffle the palette once per session so colors rotate on each load
+const _sessionPalette = (() => {
+  const p = [...PALETTE]
+  for (let i = p.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [p[i], p[j]] = [p[j], p[i]]
+  }
+  return p
+})()
+
 export function colorFor(name) {
-  let h = 0
-  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0
-  return PALETTE[h % PALETTE.length]
+  const idx = ROSTER.indexOf(name)
+  return idx === -1
+    ? _sessionPalette[0]
+    : _sessionPalette[idx % _sessionPalette.length]
 }
 
 export function initials(name) {

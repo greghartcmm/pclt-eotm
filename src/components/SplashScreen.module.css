@@ -65,6 +65,7 @@
   text-transform: uppercase;
   letter-spacing: -0.01em;
   color: #fff;
+  transition: transform 0.65s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .titleAmber {

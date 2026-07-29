@@ -33,8 +33,11 @@ export default function SplashScreen({ monthLabel, headerRef, onRevealPage, onDo
   const [shellVisible, setShellVisible] = useState(true)
   const [gone, setGone]                 = useState(false)
   const [dismissing, setDismissing]     = useState(false)
+  const [titleShift, setTitleShift]     = useState(0)
   const dismissedRef = useRef(false)
   const timerRef     = useRef(null)
+  const contentRef   = useRef(null)
+  const titleRef     = useRef(null)
 
   useEffect(() => {
     const t1 = setTimeout(() => {
@@ -58,15 +61,31 @@ export default function SplashScreen({ monthLabel, headerRef, onRevealPage, onDo
     dismissedRef.current = true
     clearTimeout(timerRef.current)
 
-    const headerEl = headerRef?.current
+    const headerEl  = headerRef?.current
+    const contentEl = contentRef?.current
+    const titleEl   = titleRef?.current
     const headerBottom = headerEl ? headerEl.getBoundingClientRect().bottom : 0
 
-    // Fade decoratives only — title stays visible and rides up as the overlay collapses.
-    // With align-items:center, a ~380px content block in a ~280px collapsed overlay leaves
-    // the title at roughly the same y-position as the real header h1. The shell then fades
-    // slowly (0.5s) to crossfade between the two nearly-identical positions.
+    // Measure the gap between where align-items:center will place the title after
+    // collapse and where the real header h1 actually sits, then close it with a
+    // synchronized translateY so both land in the same spot.
+    let shift = 0
+    if (headerEl && contentEl && titleEl) {
+      const contentH             = contentEl.getBoundingClientRect().height
+      const titleOffsetFromTop   = titleEl.getBoundingClientRect().top - contentEl.getBoundingClientRect().top
+      const naturalTitleY        = (headerBottom - contentH) / 2 + titleOffsetFromTop
+      const headerH1             = headerEl.querySelector('h1')
+      const targetY              = headerH1
+        ? headerH1.getBoundingClientRect().top
+        : headerEl.getBoundingClientRect().top + parseFloat(getComputedStyle(headerEl).paddingTop) + 24
+      shift = targetY - naturalTitleY
+    }
+
     setDismissing(true)
     onRevealPage()
+
+    // Apply shift one frame later so the transition fires (not part of the same render)
+    requestAnimationFrame(() => setTitleShift(shift))
 
     setTimeout(() => setSplashHeight(`${headerBottom}px`), 80)
     setTimeout(() => setShellVisible(false), 760)
@@ -80,11 +99,15 @@ export default function SplashScreen({ monthLabel, headerRef, onRevealPage, onDo
       className={`${styles.overlay} ${!shellVisible ? styles.shellHidden : ""}`}
       style={{ height: splashHeight }}
     >
-      <div className={styles.content}>
+      <div className={styles.content} ref={contentRef}>
         <div className={`${styles.trophy} ${dismissing ? styles.fadeOut : ""}`}>🏆</div>
         <p className={`${styles.eyebrow} ${dismissing ? styles.fadeOut : ""}`}>CoverMyMeds · PCLT Presents</p>
 
-        <h1 className={styles.title}>
+        <h1
+          ref={titleRef}
+          className={styles.title}
+          style={{ transform: `translateY(${titleShift}px)` }}
+        >
           Employee of the<br /><span className={styles.titleAmber}>Month</span>
         </h1>
 
