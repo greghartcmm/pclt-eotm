@@ -5,6 +5,7 @@ import { FrameBar, Card, Note, Spinner, Button } from "./components/UI.jsx"
 import VotingView from "./components/VotingView.jsx"
 import AdminView from "./components/AdminView.jsx"
 import PinGate from "./components/PinGate.jsx"
+import SplashScreen from "./components/SplashScreen.jsx"
 import styles from "./App.module.css"
 
 export default function App() {
@@ -13,6 +14,10 @@ export default function App() {
   const [existingVote, setExistingVote] = useState(null)
   const [isAdminRoute, setIsAdminRoute] = useState(false)
   const [activeTab, setActiveTab] = useState("admin")
+  const [showSplash, setShowSplash] = useState(() => {
+    const params = new URLSearchParams(window.location.search)
+    return !!params.get("token")
+  })
 
   const { monthKey, monthLabel, isClosed } = getVotingPeriod()
 
@@ -103,6 +108,9 @@ export default function App() {
   // ── Voter route ───────────────────────────────────────────────────────────
   return (
     <div className={styles.root}>
+      {showSplash && (
+        <SplashScreen monthLabel={monthLabel} onDone={() => setShowSplash(false)} />
+      )}
       <FrameBar />
       <div className={styles.wrap}>
         <Header monthLabel={monthLabel} />
