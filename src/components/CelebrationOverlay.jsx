@@ -1,7 +1,10 @@
 import { useRef, useState } from "react"
 import html2canvas from "html2canvas"
-import { FrameBar, Avatar } from "./UI.jsx"
 import styles from "./CelebrationOverlay.module.css"
+
+function initials(name) {
+  return name.split(" ").map(p => p[0]).join("").slice(0, 2).toUpperCase()
+}
 
 export default function CelebrationOverlay({ data, onClose }) {
   const { winners, featuredComment, voteCount, label } = data
@@ -37,7 +40,7 @@ export default function CelebrationOverlay({ data, onClose }) {
         setCopying(false)
         setTimeout(() => setCopyMsg(""), 2500)
       }, "image/png")
-    } catch (e) {
+    } catch {
       setCopying(false)
       setCopyMsg("Error — try a screenshot instead")
       setTimeout(() => setCopyMsg(""), 3000)
@@ -56,17 +59,46 @@ export default function CelebrationOverlay({ data, onClose }) {
 
       <div className={styles.cardWrap} onClick={e => e.stopPropagation()}>
         <div className={styles.card} ref={cardRef}>
-          <FrameBar />
-          <div className={styles.content}>
-            <p className={styles.eyebrow}>CoverMyMeds · PCLT Team</p>
-            <h1 className={styles.title}>Employee of the Month</h1>
-            <p className={styles.monthLabel}>{label}</p>
-            <div className={styles.avatarRow}>
+
+          {/* Rainbow bar — top */}
+          <div className={styles.rainbowBar} />
+
+          {/* Slim navy header strip */}
+          <div className={styles.headerStrip}>
+            <div>
+              <div className={styles.headerEyebrow}>CoverMyMeds · PCLT Team</div>
+              <div className={styles.headerTitle}>Employee of the Month</div>
+            </div>
+            <div className={styles.monthBadge}>{label.toUpperCase()}</div>
+          </div>
+
+          {/* Team photo */}
+          <div className={styles.photoSection}>
+            <img
+              src={`${import.meta.env.BASE_URL}eotm-winner-image.jpg`}
+              alt="PCLT Team"
+              crossOrigin="anonymous"
+              style={{ width: "100%", height: "auto", display: "block" }}
+            />
+          </div>
+
+          {/* Trophy divider */}
+          <div className={styles.trophyDivider}>
+            <div className={styles.trophyLine} style={{ background: "linear-gradient(90deg, transparent, #E0EAF0)" }} />
+            <span className={styles.trophyIcon}>🏆</span>
+            <div className={styles.trophyLine} style={{ background: "linear-gradient(90deg, #E0EAF0, transparent)" }} />
+          </div>
+
+          {/* Winner block */}
+          <div className={styles.winnerBlock}>
+            <div className={`${styles.avatarRow} ${winners.length > 1 ? styles.avatarRowMulti : ""}`}>
               {winners.map(name => (
-                <Avatar key={name} name={name} size={80} />
+                <div key={name} className={styles.avatar}>
+                  {initials(name)}
+                </div>
               ))}
             </div>
-            <p className={styles.winnerNames}>{winners.join(" & ")}</p>
+            <p className={styles.winnerName}>{winners.join(" & ")}</p>
             {featuredComment && (
               <p className={styles.comment}>"{featuredComment}"</p>
             )}
@@ -74,7 +106,9 @@ export default function CelebrationOverlay({ data, onClose }) {
               {voteCount != null ? `${voteCount} ${voteCount === 1 ? "vote" : "votes"} · ` : ""}PCLT Team
             </p>
           </div>
-          <FrameBar />
+
+          {/* Rainbow bar — bottom */}
+          <div className={styles.rainbowBar} />
         </div>
 
         <div className={styles.copyRow}>

@@ -8,10 +8,12 @@
   align-items: center;
   justify-content: center;
   gap: 20px;
+  overflow-y: auto;
+  padding: 40px 20px;
 }
 
 .closeBtn {
-  position: absolute;
+  position: fixed;
   top: 20px;
   right: 24px;
   background: none;
@@ -26,7 +28,6 @@
 }
 .closeBtn:hover { opacity: 0.8; }
 
-/* Fixed-size card — the capture target */
 .cardWrap {
   display: flex;
   flex-direction: column;
@@ -35,83 +36,147 @@
 }
 
 .card {
-  width: 900px;
-  height: 500px;
-  background: var(--navy);
-  border-radius: 12px;
+  width: 560px;
+  background: white;
+  border-radius: 16px;
   overflow: hidden;
-  display: flex;
-  flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
   flex-shrink: 0;
 }
 
-.content {
+/* Rainbow bars */
+.rainbowBar {
+  height: 6px;
+  width: 100%;
+  background: linear-gradient(90deg,
+    #FB8500 0%, #FFB703 16%, #E63946 32%,
+    #C77DFF 50%, #219EBC 68%, #023047 100%);
+}
+
+/* Navy header strip */
+.headerStrip {
+  background: #023047;
+  padding: 1rem 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.headerEyebrow {
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(142, 202, 230, 0.55);
+}
+
+.headerTitle {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: white;
+}
+
+.monthBadge {
+  background: #FFB703;
+  color: #023047;
+  font-size: 0.68rem;
+  font-weight: 800;
+  padding: 4px 12px;
+  border-radius: 100px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* Photo section */
+.photoSection {
+  background: white;
+  padding: 1.25rem 1.5rem 0.75rem;
+}
+
+/* Trophy divider */
+.trophyDivider {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0 2rem;
+  margin-bottom: 1.25rem;
+}
+
+.trophyLine {
   flex: 1;
+  height: 1.5px;
+}
+
+.trophyIcon {
+  font-size: 1.1rem;
+  opacity: 0.6;
+}
+
+/* Winner block */
+.winnerBlock {
+  padding: 0 2rem 1.75rem;
+  text-align: center;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  padding: 32px 48px;
-  gap: 10px;
-  text-align: center;
-}
-
-.eyebrow {
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  color: rgba(255, 255, 255, 0.5);
-  margin: 0;
-  font-weight: 700;
-}
-
-.title {
-  font-family: var(--serif);
-  font-size: 38px;
-  font-weight: 700;
-  color: #fff;
-  margin: 0;
-  line-height: 1.15;
-}
-
-.monthLabel {
-  font-size: 14px;
-  color: rgba(255, 255, 255, 0.5);
-  margin: 0;
 }
 
 .avatarRow {
   display: flex;
-  flex-direction: row;
   align-items: center;
-  gap: 16px;
-  margin: 4px 0;
+  justify-content: center;
+  margin-bottom: 0.75rem;
 }
 
-.winnerNames {
-  font-family: var(--serif);
-  font-size: 30px;
-  font-weight: 700;
-  color: #fff;
-  margin: 0;
+.avatarRowMulti {
+  gap: 0.75rem;
+}
+
+.avatar {
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #219EBC, #1a7fa0);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: white;
+  box-shadow: 0 6px 20px rgba(33, 158, 188, 0.35);
+  border: 4px solid white;
+  outline: 2px solid #C8E8F4;
+  flex-shrink: 0;
+}
+
+.winnerName {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 1.85rem;
+  font-weight: 800;
+  color: #023047;
+  margin: 0 0 0.5rem;
+  line-height: 1.1;
 }
 
 .comment {
-  font-size: 15px;
+  font-size: 0.95rem;
   font-style: italic;
-  color: var(--orange);
-  max-width: 620px;
-  margin: 2px 0;
+  color: #FB8500;
   line-height: 1.5;
+  margin: 0 0 0.6rem;
+  max-width: 380px;
 }
 
 .meta {
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.4);
+  font-size: 0.67rem;
+  color: #9AABB5;
+  letter-spacing: 0.06em;
   margin: 0;
 }
 
-/* Copy button row — outside the card, not captured */
+/* Copy button row */
 .copyRow {
   display: flex;
   align-items: center;
@@ -138,13 +203,10 @@
   color: rgba(255, 255, 255, 0.6);
 }
 
-@media (max-width: 940px) {
-  .card {
-    width: calc(100vw - 40px);
-    height: auto;
-    min-height: 300px;
-  }
-  .content { padding: 24px; }
-  .title { font-size: 28px; }
-  .winnerNames { font-size: 22px; }
+@media (max-width: 620px) {
+  .card { width: calc(100vw - 40px); }
+  .headerStrip { padding: 0.75rem 1.25rem; }
+  .winnerName { font-size: 1.4rem; }
+  .trophyDivider { padding: 0 1.25rem; }
+  .winnerBlock { padding: 0 1.25rem 1.25rem; }
 }
