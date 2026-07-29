@@ -166,7 +166,7 @@
   position: absolute;
   inset: 0;
   border-radius: var(--radius);
-  background: rgba(255, 255, 255, 0.93);
+  background: var(--white);
   display: flex;
   flex-direction: column;
   align-items: center;
