@@ -18,8 +18,8 @@ const QUOTES = [
   { text: "Together, we achieve great things.\nToday, we are clicking on one of them.", attr: "Strategic Alignment Office" },
 ]
 
-const DURATION   = 2800
-const QUOTE_HOLD = 1300
+const DURATION   = 3800
+const QUOTE_HOLD = 1800
 const QUOTE_FADE = 200
 
 export default function SplashScreen({ monthLabel, headerRef, onRevealPage, onDone }) {
