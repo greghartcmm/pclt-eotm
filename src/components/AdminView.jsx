@@ -306,19 +306,6 @@ export default function AdminView({ monthKey, monthLabel, isClosed }) {
             </div>
             <div className={styles.vlSub}>{monthLabel} · send each person their link</div>
 
-            <div className={styles.vlProgRow}>
-              <div className={styles.vlProgNums}>
-                <div className={styles.vlProgBig}>
-                  {votedSet.size}
-                  <span className={styles.vlProgTotal}>/{ROSTER.length}</span>
-                </div>
-                <div className={styles.vlProgSub}>voted</div>
-              </div>
-              <div className={styles.vlProgTrack}>
-                <div className={styles.vlProgFill} style={{ width: `${turnout}%` }} />
-              </div>
-            </div>
-
             <button className={styles.btnCopyAll} onClick={copyAll}>
               {copied === "__all__" ? "✓ Copied all" : "Copy all links"}
             </button>
