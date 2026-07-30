@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from "react"
-import { ROSTER, getVotingPeriod, ADMIN_TOKENS } from "./constants.js"
+import { ROSTER, getVotingPeriod } from "./constants.js"
 import { resolveToken, getExistingVote } from "./supabase.js"
-import { FrameBar, Card, Note, Spinner, Button } from "./components/UI.jsx"
+import { FrameBar, Card, Note, Spinner } from "./components/UI.jsx"
 import VotingView from "./components/VotingView.jsx"
 import AdminView from "./components/AdminView.jsx"
+import AdminHeaderStrip from "./components/AdminHeaderStrip.jsx"
 import PinGate from "./components/PinGate.jsx"
 import SplashScreen from "./components/SplashScreen.jsx"
 import styles from "./App.module.css"
@@ -13,7 +14,6 @@ export default function App() {
   const [voterName, setVoterName] = useState(null)
   const [existingVote, setExistingVote] = useState(null)
   const [isAdminRoute, setIsAdminRoute] = useState(false)
-  const [activeTab, setActiveTab] = useState("admin")
 
   const [showSplash, setShowSplash] = useState(() =>
     !!new URLSearchParams(window.location.search).get("token")
@@ -70,40 +70,18 @@ export default function App() {
   // ── Admin route ──────────────────────────────────────────────────────────
   if (isAdminRoute) {
     return (
-      <div className={styles.root}>
-        <FrameBar />
-        <div className={styles.wrapAdmin}>
-          <AdminHeader monthLabel={monthLabel} />
+      <div className={styles.adminRoot}>
+        <AdminHeaderStrip monthKey={monthKey} isClosed={isClosed} />
 
-          {appState === "admin-pin" && (
+        {appState === "admin-pin" && (
+          <div className={styles.pinWrap}>
             <PinGate onUnlock={() => setAppState("admin")} />
-          )}
+          </div>
+        )}
 
-          {appState === "admin" && (
-            <>
-              <div className={styles.tabBar}>
-                <button
-                  className={`${styles.tab} ${activeTab === "admin" ? styles.tabActive : ""}`}
-                  onClick={() => setActiveTab("admin")}
-                >
-                  Admin panel
-                </button>
-                <button
-                  className={`${styles.tab} ${activeTab === "vote" ? styles.tabActive : ""}`}
-                  onClick={() => setActiveTab("vote")}
-                >
-                  Voting page
-                </button>
-              </div>
-
-              {activeTab === "admin" && <AdminView monthKey={monthKey} monthLabel={monthLabel} />}
-
-              {activeTab === "vote" && <AdminVotingLinks />}
-            </>
-          )}
-
-          <footer className={styles.footer}>CoverMyMeds is a McKesson company.</footer>
-        </div>
+        {appState === "admin" && (
+          <AdminView monthKey={monthKey} monthLabel={monthLabel} isClosed={isClosed} />
+        )}
       </div>
     )
   }
@@ -188,42 +166,3 @@ export default function App() {
   )
 }
 
-// Admin route keeps the original header style
-function AdminHeader({ monthLabel }) {
-  return (
-    <header className={styles.mast}>
-      <div className={styles.eyebrow}>
-        CoverMyMeds <span className={styles.dot}>•</span> PCLT Team
-      </div>
-      <h1 className={styles.h1}>Employee of the Month</h1>
-      <div className={styles.period}>
-        Recognizing our teammate for <strong>{monthLabel}</strong>
-      </div>
-    </header>
-  )
-}
-
-function AdminVotingLinks() {
-  const base = `${window.location.origin}${window.location.pathname}`
-
-  return (
-    <Card>
-      <h2 className={styles.setupH2}>Admin voting links</h2>
-      <p className={styles.setupSub}>
-        Click your link below to open your personal ballot. Other team members use their own
-        personalized links sent by email.
-      </p>
-      <div className={styles.adminLinkList}>
-        {Object.entries(ADMIN_TOKENS).map(([name, tok]) => (
-          <Button
-            key={name}
-            variant="ghost"
-            onClick={() => { window.location.href = `${base}?token=${tok}` }}
-          >
-            {name}
-          </Button>
-        ))}
-      </div>
-    </Card>
-  )
-}

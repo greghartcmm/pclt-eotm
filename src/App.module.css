@@ -1,5 +1,16 @@
 .root { min-height: 100vh; }
 
+.adminRoot {
+  min-height: 100vh;
+  background: #F4F7F9;
+}
+
+.pinWrap {
+  max-width: 480px;
+  margin: 3rem auto;
+  padding: 0 20px;
+}
+
 /* V2 voter page root — cool gray background */
 .voterRoot {
   min-height: 100vh;
