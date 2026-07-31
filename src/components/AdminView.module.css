@@ -506,3 +506,33 @@
   .statRefreshWrap { padding-left: 0; }
   .statNum { font-size: 1.8rem; }
 }
+
+@media (max-width: 560px) {
+  .statBanner {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0;
+    padding: 0.9rem 1.1rem;
+  }
+  .statItem {
+    padding-right: 1rem;
+    padding-left: 1rem;
+    margin-right: 0;
+  }
+  .statItem:first-child { padding-left: 0; }
+  .statItemLast { padding-right: 0; }
+  .statNum { font-size: 1.45rem; }
+  .statLbl { font-size: 0.52rem; letter-spacing: 0.1em; }
+  .statBarWrap {
+    grid-column: 1 / -1;
+    padding-left: 0;
+    min-width: 0;
+    border-top: 1px solid #E8EFF3;
+    padding-top: 0.65rem;
+    margin-top: 0.4rem;
+  }
+  .statRefreshWrap {
+    grid-column: 1 / -1;
+    padding-left: 0;
+  }
+}
