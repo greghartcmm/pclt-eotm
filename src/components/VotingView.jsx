@@ -110,11 +110,6 @@ export default function VotingView({ voterName, monthKey, monthLabel, existingVo
   return (
     <>
       <Card className={styles.voteCard}>
-        <div className={styles.voterBadge}>
-          <Avatar name={voterName} size={34} />
-          <span className={styles.voterName}>Voting as <strong>{voterName}</strong></span>
-        </div>
-
         <h2 className={styles.h2}>{isChanging ? "Change your vote" : "Cast your vote"}</h2>
         <p className={styles.sub}>
           {isChanging

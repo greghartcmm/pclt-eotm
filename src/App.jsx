@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react"
-import { ROSTER, getVotingPeriod } from "./constants.js"
+import { ROSTER, getVotingPeriod, initials } from "./constants.js"
 import { resolveToken, getExistingVote } from "./supabase.js"
 import { FrameBar, Card, Note, Spinner } from "./components/UI.jsx"
 import VotingView from "./components/VotingView.jsx"
@@ -7,6 +7,7 @@ import AdminView from "./components/AdminView.jsx"
 import AdminHeaderStrip from "./components/AdminHeaderStrip.jsx"
 import PinGate from "./components/PinGate.jsx"
 import SplashScreen from "./components/SplashScreen.jsx"
+import HofStrip from "./components/HofStrip.jsx"
 import styles from "./App.module.css"
 
 export default function App() {
@@ -101,6 +102,14 @@ export default function App() {
       <FrameBar />
 
       <header className={styles.headerStrip} ref={headerRef}>
+        {voterName && (
+          <div className={styles.voterIdChip}>
+            <div className={styles.voterIdAv}>{initials(voterName)}</div>
+            <span className={styles.voterIdTxt}>
+              Voting as <strong>{voterName}</strong>
+            </span>
+          </div>
+        )}
         <div className={styles.headerInner}>
           <p className={styles.headerEyebrow}>CoverMyMeds · PCLT Team</p>
           <h1 className={styles.headerH1}>
@@ -119,6 +128,7 @@ export default function App() {
       </header>
 
       <div className={`${styles.mainPage} ${mainVisible ? styles.mainVisible : ""}`}>
+        <HofStrip />
         <div className={styles.wrap}>
           <main>
             {appState === "loading" && <Card><Spinner /></Card>}

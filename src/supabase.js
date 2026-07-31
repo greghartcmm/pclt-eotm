@@ -127,6 +127,27 @@ export async function getWinner(monthKey) {
   }
 }
 
+export async function getAllWinners() {
+  const { data, error } = await supabase
+    .from('winners')
+    .select('month, winner_names, featured_comment, vote_count, total_votes')
+    .order('month', { ascending: false })
+    .limit(24)
+  if (error || !data) return []
+  return data.map(row => {
+    const [year, mo] = row.month.split('-')
+    const label = new Date(+year, +mo - 1, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+    return {
+      month: row.month,
+      label,
+      winners: row.winner_names,
+      voteCount: row.vote_count,
+      totalVotes: row.total_votes,
+      featuredComment: row.featured_comment || null,
+    }
+  })
+}
+
 export async function getWinnerHistory(currentMonthKey) {
   const { data, error } = await supabase
     .from('winners')

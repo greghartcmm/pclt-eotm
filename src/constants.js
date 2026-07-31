@@ -129,6 +129,11 @@ export const ADMIN_TOKENS = {
   "Megan Wetzel":   "5m640x6v6p4t6726",
 }
 
+// Portrait URL from name — files live in public/ as firstname-lastname.jpg
+export function portraitUrl(name) {
+  return `${import.meta.env.BASE_URL}${name.toLowerCase().replace(/\s+/g, '-')}.jpg`
+}
+
 // Generate a cryptographically random token
 export function generateToken() {
   const arr = new Uint8Array(12)

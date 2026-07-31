@@ -1,0 +1,130 @@
+.strip {
+  background: white;
+  border-bottom: 1px solid #E4ECF0;
+  padding: 0.85rem 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.stripClickable {
+  cursor: pointer;
+  transition: background 0.13s;
+}
+.stripClickable:hover { background: #FAFCFD; }
+
+.winner {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.winnerFaces {
+  display: flex;
+  flex-shrink: 0;
+}
+.winnerFacesMulti { gap: 6px; }
+
+.winnerInfo { min-width: 0; }
+
+.kicker {
+  font-size: 0.57rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #219EBC;
+  margin-bottom: 2px;
+}
+
+.name {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 0.98rem;
+  font-weight: 800;
+  color: #023047;
+  line-height: 1.2;
+}
+
+.comment {
+  font-size: 0.7rem;
+  color: #6b7f8a;
+  font-style: italic;
+  line-height: 1.3;
+  margin-top: 2px;
+}
+.comment::before { content: '\201C'; }
+.comment::after  { content: '\201D'; }
+
+.divider {
+  width: 1px;
+  height: 38px;
+  background: #E4ECF0;
+  flex-shrink: 0;
+}
+
+.right {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  flex-shrink: 0;
+}
+
+.pastLabel {
+  font-size: 0.57rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #9AAAB5;
+  white-space: nowrap;
+}
+
+.circles {
+  display: flex;
+  align-items: center;
+}
+
+.pc {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2px solid white;
+  margin-left: -6px;
+  flex-shrink: 0;
+  position: relative;
+  transition: transform 0.13s;
+  background: #e8f0f5;
+}
+.pc:hover { transform: translateY(-2px); z-index: 5; }
+
+.pcMore {
+  background: #023047;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.52rem;
+  font-weight: 800;
+  color: #FFB703;
+  overflow: visible;
+}
+
+.viewAll {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #219EBC;
+  white-space: nowrap;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  padding: 0;
+  transition: opacity 0.13s;
+}
+.viewAll:hover { opacity: 0.7; }
+
+@media (max-width: 560px) {
+  .strip { flex-wrap: wrap; gap: 0.75rem; padding: 0.9rem 1.1rem; }
+  .divider { display: none; }
+  .pastLabel { display: none; }
+}
