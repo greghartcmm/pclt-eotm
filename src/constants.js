@@ -84,17 +84,17 @@ export function getVotingPeriod() {
 
   const isPastCutoff = day > 5 || (day === 5 && hour >= 17)
 
-  // isClosed: we're before the cutoff (days 1–5 before 5pm) — prior month closed, current not open
-  const isClosed = !isPastCutoff
+  // Voting is always open — never a dead window. The month switches at the cutoff.
+  const isClosed = false
 
   // Which month are we voting for?
   const target = new Date(nowET)
   target.setUTCDate(1)
   if (!isPastCutoff) {
-    // Still in grace window — voting is for prior month (but closed)
+    // Before the 5th at 5pm — voting for prior month (e.g. Aug 1–5 → July)
     target.setUTCMonth(target.getUTCMonth() - 1)
   }
-  // After cutoff — voting for current month
+  // After the 5th at 5pm — voting for current month
 
   const year  = target.getUTCFullYear()
   const month = String(target.getUTCMonth() + 1).padStart(2, "0")
