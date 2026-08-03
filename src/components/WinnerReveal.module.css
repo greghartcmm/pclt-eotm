@@ -73,8 +73,8 @@
 
 .portraitWrap {
   position: relative;
-  width: 270px;
-  height: 270px;
+  width: 352px;
+  height: 352px;
   margin: 0 auto 1.6rem;
   display: flex;
   align-items: center;
@@ -155,13 +155,13 @@
     max-width: 100%;
   }
   .portraitWrap {
-    width: 220px;
-    height: 220px;
+    width: 290px;
+    height: 290px;
     margin-bottom: 1.1rem;
   }
   .portraitWrap img {
-    max-width: 204px !important;
-    max-height: 204px !important;
+    max-width: 260px !important;
+    max-height: 260px !important;
   }
   .headline { font-size: 1.65rem; }
   .kicker { font-size: 0.64rem; }
