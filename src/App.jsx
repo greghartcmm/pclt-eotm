@@ -1,6 +1,12 @@
 import { useState, useEffect, useRef } from "react"
-import { ROSTER, getVotingPeriod, initials } from "./constants.js"
-import { resolveToken, getExistingVote } from "./supabase.js"
+import { ROSTER, ADMINS, getVotingPeriod, initials } from "./constants.js"
+import {
+  resolveToken,
+  getExistingVote,
+  getAllWinners,
+  hasSeenCelebration,
+  markCelebrationSeen,
+} from "./supabase.js"
 import { FrameBar, Card, Note, Spinner } from "./components/UI.jsx"
 import VotingView from "./components/VotingView.jsx"
 import AdminView from "./components/AdminView.jsx"
@@ -8,6 +14,7 @@ import AdminHeaderStrip from "./components/AdminHeaderStrip.jsx"
 import PinGate from "./components/PinGate.jsx"
 import SplashScreen from "./components/SplashScreen.jsx"
 import HofStrip from "./components/HofStrip.jsx"
+import WinnerReveal from "./components/WinnerReveal.jsx"
 import styles from "./App.module.css"
 
 export default function App() {
@@ -15,6 +22,13 @@ export default function App() {
   const [voterName, setVoterName] = useState(null)
   const [existingVote, setExistingVote] = useState(null)
   const [isAdminRoute, setIsAdminRoute] = useState(false)
+  const [token, setToken] = useState(null)
+  const [winners, setWinners] = useState(null)
+  const [revealWinner, setRevealWinner] = useState(null)
+  const [showReveal, setShowReveal] = useState(false)
+  const [isPreview, setIsPreview] = useState(false)
+  const [shouldCelebrate, setShouldCelebrate] = useState(false)
+  const [adminMenuOpen, setAdminMenuOpen] = useState(false)
 
   const [showSplash, setShowSplash] = useState(() =>
     !!new URLSearchParams(window.location.search).get("token")
@@ -26,10 +40,25 @@ export default function App() {
   const headerRef = useRef(null)
   const { monthKey, monthLabel, isClosed } = getVotingPeriod()
 
+  // Show celebration 500ms after page settles post-splash
+  useEffect(() => {
+    if (!mainVisible || !shouldCelebrate) return
+    const t = setTimeout(() => setShowReveal(true), 500)
+    return () => clearTimeout(t)
+  }, [mainVisible, shouldCelebrate])
+
+  // Close admin menu on outside click
+  useEffect(() => {
+    if (!adminMenuOpen) return
+    function close() { setAdminMenuOpen(false) }
+    document.addEventListener('click', close)
+    return () => document.removeEventListener('click', close)
+  }, [adminMenuOpen])
+
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
-    const token  = params.get("token")
-    const admin  = params.get("admin")
+    const rawToken = params.get("token")
+    const admin    = params.get("admin")
 
     if (admin === "true") {
       setIsAdminRoute(true)
@@ -37,17 +66,17 @@ export default function App() {
       return
     }
 
-    if (!token) {
+    if (!rawToken) {
       setAppState("no-token")
       return
     }
 
-    initVoter(token)
+    initVoter(rawToken)
   }, [])
 
-  async function initVoter(token) {
+  async function initVoter(rawToken) {
     try {
-      const name = await resolveToken(token)
+      const name = await resolveToken(rawToken)
 
       if (!name || !ROSTER.includes(name)) {
         setAppState("invalid-token")
@@ -55,10 +84,22 @@ export default function App() {
       }
 
       setVoterName(name)
+      setToken(rawToken)
 
-      if (!isClosed) {
-        const existing = await getExistingVote(monthKey, name)
-        if (existing) setExistingVote(existing)
+      const [existing, allWinners] = await Promise.all([
+        getExistingVote(monthKey, name),
+        getAllWinners(),
+      ])
+
+      if (existing) setExistingVote(existing)
+      setWinners(allWinners)
+
+      if (allWinners.length > 0) {
+        const seen = await hasSeenCelebration(rawToken, allWinners[0].month)
+        if (!seen) {
+          setRevealWinner(allWinners[0])
+          setShouldCelebrate(true)
+        }
       }
 
       setAppState("voter")
@@ -67,6 +108,31 @@ export default function App() {
       setAppState("error")
     }
   }
+
+  async function dismissReveal() {
+    const wasPreview = isPreview
+    setShowReveal(false)
+    setIsPreview(false)
+    if (!wasPreview && token && revealWinner) {
+      await markCelebrationSeen(token, revealWinner.month)
+    }
+  }
+
+  function simulateWinner() {
+    setAdminMenuOpen(false)
+    const candidates = ROSTER.filter(n => n !== voterName)
+    const pick = candidates[Math.floor(Math.random() * candidates.length)]
+    setRevealWinner({
+      winners: [pick],
+      label: monthLabel,
+      month: monthKey,
+      featuredComment: "Sample comment — real quotes appear once voting closes",
+    })
+    setIsPreview(true)
+    setShowReveal(true)
+  }
+
+  const isAdmin = ADMINS.includes(voterName)
 
   // ── Admin route ──────────────────────────────────────────────────────────
   if (isAdminRoute) {
@@ -103,11 +169,26 @@ export default function App() {
 
       <header className={styles.headerStrip} ref={headerRef}>
         {voterName && (
-          <div className={styles.voterIdChip}>
-            <div className={styles.voterIdAv}>{initials(voterName)}</div>
+          <div
+            className={`${styles.voterIdChip} ${isAdmin ? styles.voterIdChipAdmin : ""}`}
+            onClick={isAdmin ? e => { e.stopPropagation(); setAdminMenuOpen(v => !v) } : undefined}
+            role={isAdmin ? "button" : undefined}
+            tabIndex={isAdmin ? 0 : undefined}
+            aria-label={isAdmin ? "Admin menu" : undefined}
+          >
+            <div className={`${styles.voterIdAv} ${isAdmin ? styles.voterIdAvAdmin : ""}`}>
+              {initials(voterName)}
+            </div>
             <span className={styles.voterIdTxt}>
               Voting as <strong>{voterName}</strong>
             </span>
+            {isAdmin && adminMenuOpen && (
+              <div className={styles.adminMenu}>
+                <button className={styles.adminMenuBtn} onClick={simulateWinner}>
+                  🎲 Simulate winner
+                </button>
+              </div>
+            )}
           </div>
         )}
         <div className={styles.headerInner}>
@@ -128,7 +209,7 @@ export default function App() {
       </header>
 
       <div className={`${styles.mainPage} ${mainVisible ? styles.mainVisible : ""}`}>
-        <HofStrip />
+        <HofStrip winners={winners} />
         <div className={styles.wrap}>
           <main>
             {appState === "loading" && <Card><Spinner /></Card>}
@@ -172,7 +253,14 @@ export default function App() {
           </main>
         </div>
       </div>
+
+      {showReveal && revealWinner && (
+        <WinnerReveal
+          winner={revealWinner}
+          isPreview={isPreview}
+          onDismiss={dismissReveal}
+        />
+      )}
     </div>
   )
 }
-

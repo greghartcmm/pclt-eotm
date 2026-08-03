@@ -1,7 +1,6 @@
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Avatar } from "./UI.jsx"
 import { portraitUrl } from "../constants.js"
-import { getAllWinners } from "../supabase.js"
 import HofModal from "./HofModal.jsx"
 import styles from "./HofStrip.module.css"
 
@@ -25,13 +24,8 @@ export function Portrait({ name, size, style = {} }) {
 
 const MAX_PAST = 4
 
-export default function HofStrip() {
-  const [winners, setWinners] = useState(null)
+export default function HofStrip({ winners }) {
   const [modalOpen, setModalOpen] = useState(false)
-
-  useEffect(() => {
-    getAllWinners().then(setWinners)
-  }, [])
 
   if (!winners || winners.length === 0) return null
 

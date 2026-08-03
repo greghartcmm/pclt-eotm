@@ -33,6 +33,16 @@
   align-items: center;
   gap: 7px;
   z-index: 1;
+  border-radius: 20px;
+  padding: 3px 6px 3px 3px;
+  transition: background 0.13s;
+}
+
+.voterIdChipAdmin {
+  cursor: pointer;
+}
+.voterIdChipAdmin:hover {
+  background: rgba(255, 255, 255, 0.08);
 }
 .voterIdAv {
   width: 26px;
@@ -48,6 +58,39 @@
   justify-content: center;
   flex-shrink: 0;
 }
+.voterIdAvAdmin {
+  box-shadow: 0 0 0 2px rgba(255, 183, 3, 0.5);
+}
+
+.adminMenu {
+  position: absolute;
+  top: 36px;
+  right: 0;
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+  padding: 5px;
+  min-width: 168px;
+  z-index: 20;
+}
+.adminMenuBtn {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  font-family: inherit;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #023047;
+  padding: 8px 9px;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: background 0.13s;
+}
+.adminMenuBtn:hover { background: #F0F5F8; }
 .voterIdTxt {
   font-size: 0.68rem;
   color: rgba(255, 255, 255, 0.38);

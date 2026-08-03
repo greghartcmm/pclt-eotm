@@ -127,6 +127,22 @@ export async function getWinner(monthKey) {
   }
 }
 
+export async function hasSeenCelebration(token, winnerMonth) {
+  const { data, error } = await supabase
+    .from('celebration_seen')
+    .select('token')
+    .eq('token', token)
+    .eq('winner_month', winnerMonth)
+    .single()
+  return !error && !!data
+}
+
+export async function markCelebrationSeen(token, winnerMonth) {
+  await supabase
+    .from('celebration_seen')
+    .upsert({ token, winner_month: winnerMonth }, { onConflict: 'token,winner_month' })
+}
+
 export async function getAllWinners() {
   const { data, error } = await supabase
     .from('winners')
