@@ -7,7 +7,7 @@
   align-items: center;
   justify-content: center;
   padding: 1.25rem;
-  overflow: hidden;
+  overflow-y: auto;
   animation: overlayIn 0.25s ease forwards;
 }
 
@@ -18,10 +18,10 @@
 
 .card {
   background: white;
-  border-radius: 20px;
-  max-width: 360px;
+  border-radius: 24px;
+  max-width: 660px;
   width: 100%;
-  padding: 2.25rem 1.75rem 1.75rem;
+  padding: 3rem 3rem 2.5rem;
   text-align: center;
   position: relative;
   box-shadow: 0 28px 70px rgba(0, 0, 0, 0.5);
@@ -57,12 +57,12 @@
 
 .close {
   position: absolute;
-  top: 10px;
-  right: 12px;
+  top: 14px;
+  right: 16px;
   background: none;
   border: none;
   color: #C4CFD5;
-  font-size: 1.2rem;
+  font-size: 1.5rem;
   cursor: pointer;
   padding: 4px 8px;
   line-height: 1;
@@ -73,9 +73,9 @@
 
 .portraitWrap {
   position: relative;
-  width: 132px;
-  height: 132px;
-  margin: 0 auto 1.1rem;
+  width: 200px;
+  height: 200px;
+  margin: 0 auto 1.4rem;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -83,7 +83,7 @@
 
 .ring {
   position: absolute;
-  inset: -8px;
+  inset: -12px;
   border-radius: 50%;
   background: rgba(255, 183, 3, 0.15);
 }
@@ -99,29 +99,32 @@
 }
 
 .kicker {
-  font-size: 0.58rem;
+  font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: #219EBC;
-  margin-bottom: 0.45rem;
+  margin-bottom: 0.6rem;
 }
 
 .headline {
   font-family: Georgia, 'Times New Roman', serif;
-  font-size: 1.65rem;
+  font-size: 2.25rem;
   font-weight: 900;
   color: #023047;
   line-height: 1.15;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.7rem;
 }
 
 .comment {
-  font-size: 0.76rem;
+  font-size: 0.95rem;
   color: #6b7f8a;
   font-style: italic;
-  line-height: 1.4;
-  margin-bottom: 0.2rem;
+  line-height: 1.5;
+  margin-bottom: 0.3rem;
+  max-width: 480px;
+  margin-left: auto;
+  margin-right: auto;
 }
 .comment::before { content: '\201C'; }
 .comment::after  { content: '\201D'; }
@@ -130,16 +133,36 @@
   background: #FFB703;
   color: #023047;
   font-weight: 800;
-  font-size: 0.85rem;
-  border-radius: 10px;
-  padding: 0.7rem 1.5rem;
+  font-size: 1rem;
+  border-radius: 12px;
+  padding: 0.9rem 2.5rem;
   border: none;
   cursor: pointer;
-  margin-top: 1.25rem;
+  margin-top: 1.5rem;
   font-family: inherit;
   transition: filter 0.13s;
 }
 .cta:hover { filter: brightness(1.06); }
+
+@media (max-width: 600px) {
+  .card {
+    padding: 2.25rem 1.5rem 2rem;
+    border-radius: 18px;
+  }
+  .portraitWrap {
+    width: 150px;
+    height: 150px;
+    margin-bottom: 1rem;
+  }
+  .portraitWrap img {
+    max-width: 136px !important;
+    max-height: 136px !important;
+  }
+  .headline { font-size: 1.75rem; }
+  .kicker { font-size: 0.64rem; }
+  .comment { font-size: 0.84rem; }
+  .cta { font-size: 0.9rem; padding: 0.8rem 2rem; }
+}
 
 /* Confetti */
 .confetti {
@@ -148,7 +171,7 @@
   height: 8px;
   border-radius: 2px;
   left: 50%;
-  top: 34%;
+  top: 28%;
   margin-left: -4px;
   margin-top: -4px;
   opacity: 0;

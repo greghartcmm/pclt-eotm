@@ -7,7 +7,7 @@ function useConfetti() {
     const colors = ['#FFB703', '#FB8500', '#219EBC', '#8ECAE6', '#E70865']
     return Array.from({ length: 14 }, (_, i) => {
       const angle = (Math.PI * 2 * i) / 14 + Math.random() * 0.4
-      const dist = 90 + Math.random() * 70
+      const dist = 140 + Math.random() * 100
       return {
         id: i,
         color: colors[i % colors.length],
@@ -34,10 +34,6 @@ export default function WinnerReveal({ winner, isPreview, onDismiss }) {
         className={`${styles.card} ${isPreview ? styles.cardPreview : ""}`}
         onClick={e => e.stopPropagation()}
       >
-        {isPreview && (
-          <div className={styles.previewBadge}>Preview — not a real announcement</div>
-        )}
-
         {confetti.map(c => (
           <div
             key={c.id}
@@ -61,8 +57,8 @@ export default function WinnerReveal({ winner, isPreview, onDismiss }) {
               <Portrait
                 key={name}
                 name={name}
-                size={names.length > 1 ? 90 : 116}
-                style={{ border: '5px solid #FFB703', position: 'relative', zIndex: 1 }}
+                size={names.length > 1 ? 130 : 180}
+                style={{ border: '6px solid #FFB703', position: 'relative', zIndex: 1 }}
               />
             ))}
           </div>
