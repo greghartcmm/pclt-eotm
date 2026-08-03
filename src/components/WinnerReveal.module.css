@@ -73,9 +73,9 @@
 
 .portraitWrap {
   position: relative;
-  width: 200px;
-  height: 200px;
-  margin: 0 auto 1.4rem;
+  width: 270px;
+  height: 270px;
+  margin: 0 auto 1.6rem;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -83,7 +83,7 @@
 
 .ring {
   position: absolute;
-  inset: -12px;
+  inset: -14px;
   border-radius: 50%;
   background: rgba(255, 183, 3, 0.15);
 }
@@ -109,15 +109,15 @@
 
 .headline {
   font-family: Georgia, 'Times New Roman', serif;
-  font-size: 2.25rem;
+  font-size: 1.9rem;
   font-weight: 900;
   color: #023047;
   line-height: 1.15;
-  margin-bottom: 0.7rem;
+  margin-bottom: 0.55rem;
 }
 
 .comment {
-  font-size: 0.95rem;
+  font-size: 0.88rem;
   color: #6b7f8a;
   font-style: italic;
   line-height: 1.5;
@@ -145,22 +145,27 @@
 .cta:hover { filter: brightness(1.06); }
 
 @media (max-width: 600px) {
+  .overlay {
+    align-items: flex-start;
+    padding: 1rem 0.75rem 2rem;
+  }
   .card {
     padding: 2.25rem 1.5rem 2rem;
     border-radius: 18px;
+    max-width: 100%;
   }
   .portraitWrap {
-    width: 150px;
-    height: 150px;
-    margin-bottom: 1rem;
+    width: 220px;
+    height: 220px;
+    margin-bottom: 1.1rem;
   }
   .portraitWrap img {
-    max-width: 136px !important;
-    max-height: 136px !important;
+    max-width: 204px !important;
+    max-height: 204px !important;
   }
-  .headline { font-size: 1.75rem; }
+  .headline { font-size: 1.65rem; }
   .kicker { font-size: 0.64rem; }
-  .comment { font-size: 0.84rem; }
+  .comment { font-size: 0.82rem; }
   .cta { font-size: 0.9rem; padding: 0.8rem 2rem; }
 }
 

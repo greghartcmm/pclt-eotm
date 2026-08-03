@@ -57,7 +57,7 @@ export default function WinnerReveal({ winner, isPreview, onDismiss }) {
               <Portrait
                 key={name}
                 name={name}
-                size={names.length > 1 ? 130 : 180}
+                size={names.length > 1 ? 170 : 240}
                 style={{ border: '6px solid #FFB703', position: 'relative', zIndex: 1 }}
               />
             ))}
