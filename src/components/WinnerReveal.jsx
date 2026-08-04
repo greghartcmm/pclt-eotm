@@ -1,6 +1,23 @@
-import { useMemo } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { Portrait } from "./HofStrip.jsx"
 import styles from "./WinnerReveal.module.css"
+
+const COMMENT_DWELL_MS = 2750
+
+function useCyclingComments(comments) {
+  const [index, setIndex] = useState(0)
+
+  useEffect(() => {
+    setIndex(0)
+    if (comments.length < 2) return
+    const id = setInterval(() => {
+      setIndex(i => (i + 1) % comments.length)
+    }, COMMENT_DWELL_MS)
+    return () => clearInterval(id)
+  }, [comments])
+
+  return comments[index]
+}
 
 function useConfetti() {
   return useMemo(() => {
@@ -22,6 +39,13 @@ function useConfetti() {
 
 export default function WinnerReveal({ winner, isPreview, onDismiss }) {
   const confetti = useConfetti()
+  const comments = useMemo(
+    () => (winner.comments && winner.comments.length > 0
+      ? winner.comments
+      : (winner.featuredComment ? [winner.featuredComment] : [])),
+    [winner]
+  )
+  const activeComment = useCyclingComments(comments)
   const names = winner.winners
   const firstNames = names.map(n => n.split(' ')[0])
   const headline = firstNames.length > 1
@@ -70,8 +94,8 @@ export default function WinnerReveal({ winner, isPreview, onDismiss }) {
 
         <div className={styles.headline}>{headline}</div>
 
-        {winner.featuredComment && (
-          <div className={styles.comment}>{winner.featuredComment}</div>
+        {activeComment && (
+          <div key={activeComment} className={styles.comment}>{activeComment}</div>
         )}
 
         <button className={styles.cta} onClick={onDismiss}>

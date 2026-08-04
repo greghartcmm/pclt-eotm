@@ -126,7 +126,7 @@ export default function App() {
       winners: [pick],
       label: monthLabel,
       month: monthKey,
-      featuredComment: "Sample comment — real quotes appear once voting closes",
+      comments: ["Sample comment — real quotes appear once voting closes"],
     })
     setIsPreview(true)
     setShowReveal(true)

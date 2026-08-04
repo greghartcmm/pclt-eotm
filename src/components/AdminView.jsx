@@ -142,13 +142,15 @@ export default function AdminView({ monthKey, monthLabel, isClosed }) {
 
   async function handleDeclareWinner(winnerNames, featuredComment) {
     const voteCount = winnerNames.length > 0 ? (counts[winnerNames[0]] || 0) : 0
-    await declareWinner(monthKey, winnerNames, featuredComment, voteCount, totalVotes)
+    const allComments = winnerNames.flatMap(name => reasonsByChoice[name] || [])
+    await declareWinner(monthKey, winnerNames, featuredComment, voteCount, totalVotes, allComments)
     const w = await getWinner(monthKey)
     setWinner(w)
     setDeclareModalOpen(false)
     setCelebrationData({
       winners: winnerNames,
       featuredComment,
+      comments: allComments,
       voteCount,
       totalVotes,
       label: monthLabel,

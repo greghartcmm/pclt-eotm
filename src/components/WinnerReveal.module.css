@@ -125,6 +125,12 @@
   max-width: 480px;
   margin-left: auto;
   margin-right: auto;
+  animation: commentFade 0.4s ease;
+}
+
+@keyframes commentFade {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 .comment::before { content: '\201C'; }
 .comment::after  { content: '\201D'; }

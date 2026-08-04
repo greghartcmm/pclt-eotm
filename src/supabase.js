@@ -97,18 +97,24 @@ export async function restoreVotesFromBackup(monthKey, backupVotesArr) {
   if (error) throw new Error(error.message)
 }
 
-export async function declareWinner(monthKey, winnerNames, featuredComment, voteCount, totalVotes) {
+export async function declareWinner(monthKey, winnerNames, featuredComment, voteCount, totalVotes, allComments = []) {
   const { error } = await supabase
     .from('winners')
     .upsert({
       month: monthKey,
       winner_names: winnerNames,
       featured_comment: featuredComment || null,
+      all_comments: allComments,
       vote_count: voteCount,
       total_votes: totalVotes,
       declared_at: new Date().toISOString(),
     }, { onConflict: 'month' })
   if (error) throw new Error(error.message)
+}
+
+function resolveComments(featuredComment, allComments) {
+  if (allComments && allComments.length > 0) return allComments
+  return featuredComment ? [featuredComment] : []
 }
 
 export async function getWinner(monthKey) {
@@ -122,6 +128,7 @@ export async function getWinner(monthKey) {
     month: data.month,
     winners: data.winner_names,
     featured_comment: data.featured_comment || null,
+    comments: resolveComments(data.featured_comment, data.all_comments),
     voteCount: data.vote_count,
     totalVotes: data.total_votes,
   }
@@ -146,7 +153,7 @@ export async function markCelebrationSeen(token, winnerMonth) {
 export async function getAllWinners() {
   const { data, error } = await supabase
     .from('winners')
-    .select('month, winner_names, featured_comment, vote_count, total_votes')
+    .select('month, winner_names, featured_comment, all_comments, vote_count, total_votes')
     .order('month', { ascending: false })
     .limit(24)
   if (error || !data) return []
@@ -160,6 +167,7 @@ export async function getAllWinners() {
       voteCount: row.vote_count,
       totalVotes: row.total_votes,
       featuredComment: row.featured_comment || null,
+      comments: resolveComments(row.featured_comment, row.all_comments),
     }
   })
 }
@@ -167,7 +175,7 @@ export async function getAllWinners() {
 export async function getWinnerHistory(currentMonthKey) {
   const { data, error } = await supabase
     .from('winners')
-    .select('month, winner_names, featured_comment, vote_count, total_votes')
+    .select('month, winner_names, featured_comment, all_comments, vote_count, total_votes')
     .neq('month', currentMonthKey)
     .order('month', { ascending: false })
     .limit(12)
@@ -182,6 +190,7 @@ export async function getWinnerHistory(currentMonthKey) {
       voteCount: row.vote_count,
       totalVotes: row.total_votes,
       featuredComment: row.featured_comment || null,
+      comments: resolveComments(row.featured_comment, row.all_comments),
     }
   })
 }
