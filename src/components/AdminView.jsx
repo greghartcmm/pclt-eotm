@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react"
 import html2canvas from "html2canvas"
 import GIF from "gif.js"
 import gifWorkerUrl from "gif.js/dist/gif.worker.js?url"
-import { ROSTER, TOKEN_MAP, colorFor, initials } from "../constants.js"
+import { ROSTER, TOKEN_MAP, colorFor, initials, monthLabelFromKey, nextMonthKey } from "../constants.js"
 import {
   getVotes,
   clearVotes,
@@ -12,6 +12,8 @@ import {
   restoreVotesFromBackup,
   declareWinner,
   getWinner,
+  closeVoting,
+  openVoting,
 } from "../supabase.js"
 import { Avatar, Note, Spinner } from "./UI.jsx"
 import ConfirmModal from "./ConfirmModal.jsx"
@@ -62,6 +64,7 @@ export default function AdminView({ monthKey, monthLabel, isClosed }) {
   const [actionLoading, setActionLoading]     = useState(false)
   const [actionError, setActionError]         = useState("")
   const [revealOpen, setRevealOpen]           = useState(false)
+  const [openVotingModalOpen, setOpenVotingModalOpen] = useState(false)
   const [gifIndex, setGifIndex]               = useState(null)
   const [gifRecording, setGifRecording]       = useState(false)
   const [gifStatus, setGifStatus]             = useState("")
@@ -155,6 +158,7 @@ export default function AdminView({ monthKey, monthLabel, isClosed }) {
     const voteCount = winnerNames.length > 0 ? (counts[winnerNames[0]] || 0) : 0
     const allComments = winnerNames.flatMap(name => reasonsByChoice[name] || [])
     await declareWinner(monthKey, winnerNames, featuredComment, voteCount, totalVotes, allComments)
+    await closeVoting(monthKey)
     const w = await getWinner(monthKey)
     setWinner(w)
     setDeclareModalOpen(false)
@@ -167,6 +171,17 @@ export default function AdminView({ monthKey, monthLabel, isClosed }) {
       label: monthLabel,
       month: monthKey,
     })
+  }
+
+  async function handleOpenVoting() {
+    setActionLoading(true); setActionError("")
+    try {
+      await openVoting(nextMonthKey(monthKey))
+      setOpenVotingModalOpen(false)
+    } catch (e) {
+      setActionError(e.message)
+    }
+    setActionLoading(false)
   }
 
   async function handleRecordGif(comments) {
@@ -291,6 +306,14 @@ export default function AdminView({ monthKey, monthLabel, isClosed }) {
                     onClick={() => setRevealOpen(true)}
                   >
                     🎉 Show reveal popup
+                  </button>
+                )}
+                {isClosed && (
+                  <button
+                    className={styles.btnPrimary}
+                    onClick={() => setOpenVotingModalOpen(true)}
+                  >
+                    🔓 Open voting for next month
                   </button>
                 )}
               </div>
@@ -488,6 +511,19 @@ export default function AdminView({ monthKey, monthLabel, isClosed }) {
           error={actionError}
           onConfirm={handleRestore}
           onCancel={() => { setRestoreModalOpen(false); setActionError("") }}
+        />
+      )}
+
+      {openVotingModalOpen && (
+        <ConfirmModal
+          title={`Open voting for ${monthLabelFromKey(nextMonthKey(monthKey))}?`}
+          body="This advances to the next month and reopens the ballot for everyone immediately."
+          confirmLabel="Open voting"
+          variant="primary"
+          loading={actionLoading}
+          error={actionError}
+          onConfirm={handleOpenVoting}
+          onCancel={() => { setOpenVotingModalOpen(false); setActionError("") }}
         />
       )}
 

@@ -60,48 +60,22 @@ export function previousMonthKey() {
   return `${year}-${month}`
 }
 
-// ─── Auto-cutoff voting period ────────────────────────────────────────────────
-// Voting closes at 5pm ET on the 5th of each month for the prior month.
-// After cutoff, voting opens for the current month.
-//
-// Returns { monthKey, monthLabel, isClosed }
-// isClosed: true only in the window between month-end and the 5th at 5pm ET
+// ─── Voting period helpers ─────────────────────────────────────────────────────
+// The current voting period (which month, open or closed) lives in the
+// `voting_state` table now — see hooks/useVotingState.js. These are just
+// pure formatting/math helpers shared by that hook and the admin panel.
 
-function isEDT(date) {
-  // EDT: second Sunday in March through first Sunday in November
-  const jan = new Date(date.getFullYear(), 0, 1).getTimezoneOffset()
-  const jul = new Date(date.getFullYear(), 6, 1).getTimezoneOffset()
-  return date.getTimezoneOffset() < Math.max(jan, jul)
+// "2026-08" -> "August 2026"
+export function monthLabelFromKey(monthKey) {
+  const [year, mo] = monthKey.split("-")
+  return new Date(+year, +mo - 1, 1).toLocaleDateString("en-US", { month: "long", year: "numeric" })
 }
 
-export function getVotingPeriod() {
-  const now = new Date()
-  const etOffset = isEDT(now) ? -4 : -5
-  const nowET = new Date(now.getTime() + etOffset * 60 * 60 * 1000)
-
-  const day  = nowET.getUTCDate()
-  const hour = nowET.getUTCHours() // 17 = 5pm
-
-  const isPastCutoff = day > 5 || (day === 5 && hour >= 17)
-
-  // Voting is always open — never a dead window. The month switches at the cutoff.
-  const isClosed = false
-
-  // Which month are we voting for?
-  const target = new Date(nowET)
-  target.setUTCDate(1)
-  if (!isPastCutoff) {
-    // Before the 5th at 5pm — voting for prior month (e.g. Aug 1–5 → July)
-    target.setUTCMonth(target.getUTCMonth() - 1)
-  }
-  // After the 5th at 5pm — voting for current month
-
-  const year  = target.getUTCFullYear()
-  const month = String(target.getUTCMonth() + 1).padStart(2, "0")
-  const monthKey   = `${year}-${month}`
-  const monthLabel = target.toLocaleDateString("en-US", { month: "long", year: "numeric", timeZone: "UTC" })
-
-  return { monthKey, monthLabel, isClosed }
+// "2026-08" -> "2026-09" (handles December -> January rollover)
+export function nextMonthKey(monthKey) {
+  const [year, mo] = monthKey.split("-").map(Number)
+  const d = new Date(year, mo, 1) // mo is 1-indexed, so this is already "next month"
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`
 }
 
 // ─── Token map ────────────────────────────────────────────────────────────────

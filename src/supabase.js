@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { monthLabelFromKey } from './constants.js'
 
 const SUPABASE_URL = 'https://jkpgggdlpjhoojamnhrp.supabase.co'
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -134,6 +135,43 @@ export async function getWinner(monthKey) {
   }
 }
 
+// ─── Voting state (single reused row, id=1) ────────────────────────────────
+// Source of truth for which month is currently being voted on and whether
+// the ballot is open. Declare Winner closes it; Open Voting advances the
+// month and reopens it. See hooks/useVotingState.js for the realtime read side.
+
+export async function getVotingState() {
+  const { data, error } = await supabase
+    .from('voting_state')
+    .select('month_key, is_open')
+    .eq('id', 1)
+    .single()
+  if (error || !data) return null
+  return { monthKey: data.month_key, isOpen: data.is_open }
+}
+
+export async function closeVoting(monthKey) {
+  const { error } = await supabase
+    .from('voting_state')
+    .update({ is_open: false, closed_at: new Date().toISOString() })
+    .eq('id', 1)
+    .eq('month_key', monthKey)
+  if (error) throw new Error(error.message)
+}
+
+export async function openVoting(nextMonthKey) {
+  const { error } = await supabase
+    .from('voting_state')
+    .update({
+      month_key: nextMonthKey,
+      is_open: true,
+      closed_at: null,
+      opened_at: new Date().toISOString(),
+    })
+    .eq('id', 1)
+  if (error) throw new Error(error.message)
+}
+
 export async function hasSeenCelebration(token, winnerMonth) {
   const { data, error } = await supabase
     .from('celebration_seen')
@@ -157,19 +195,15 @@ export async function getAllWinners() {
     .order('month', { ascending: false })
     .limit(24)
   if (error || !data) return []
-  return data.map(row => {
-    const [year, mo] = row.month.split('-')
-    const label = new Date(+year, +mo - 1, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
-    return {
-      month: row.month,
-      label,
-      winners: row.winner_names,
-      voteCount: row.vote_count,
-      totalVotes: row.total_votes,
-      featuredComment: row.featured_comment || null,
-      comments: resolveComments(row.featured_comment, row.all_comments),
-    }
-  })
+  return data.map(row => ({
+    month: row.month,
+    label: monthLabelFromKey(row.month),
+    winners: row.winner_names,
+    voteCount: row.vote_count,
+    totalVotes: row.total_votes,
+    featuredComment: row.featured_comment || null,
+    comments: resolveComments(row.featured_comment, row.all_comments),
+  }))
 }
 
 export async function getWinnerHistory(currentMonthKey) {
@@ -180,17 +214,13 @@ export async function getWinnerHistory(currentMonthKey) {
     .order('month', { ascending: false })
     .limit(12)
   if (error || !data) return []
-  return data.map(row => {
-    const [year, mo] = row.month.split('-')
-    const label = new Date(+year, +mo - 1, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
-    return {
-      month: row.month,
-      label,
-      winners: row.winner_names,
-      voteCount: row.vote_count,
-      totalVotes: row.total_votes,
-      featuredComment: row.featured_comment || null,
-      comments: resolveComments(row.featured_comment, row.all_comments),
-    }
-  })
+  return data.map(row => ({
+    month: row.month,
+    label: monthLabelFromKey(row.month),
+    winners: row.winner_names,
+    voteCount: row.vote_count,
+    totalVotes: row.total_votes,
+    featuredComment: row.featured_comment || null,
+    comments: resolveComments(row.featured_comment, row.all_comments),
+  }))
 }

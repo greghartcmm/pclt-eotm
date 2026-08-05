@@ -54,6 +54,12 @@ export default function DeclareWinnerModal({
           <button className={styles.closeBtn} onClick={onClose}>✕</button>
         </div>
 
+        {!currentWinner && (
+          <p className={styles.closeNote}>
+            Declaring a winner closes voting for {monthLabel} immediately.
+          </p>
+        )}
+
         <p className={styles.stepLabel}>1 · Select winner(s)</p>
 
         <div className={styles.candidateGrid}>

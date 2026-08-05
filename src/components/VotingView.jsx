@@ -18,7 +18,7 @@ function useIsMobile() {
   return mobile
 }
 
-export default function VotingView({ voterName, monthKey, monthLabel, existingVote, isClosed, onVoteCast }) {
+export default function VotingView({ voterName, monthKey, monthLabel, existingVote, onVoteCast }) {
   const [picked, setPicked]           = useState(existingVote || null)
   const [confirmedVote, setConfirmed] = useState(existingVote || null)
   const [reason, setReason]           = useState("")
@@ -38,19 +38,6 @@ export default function VotingView({ voterName, monthKey, monthLabel, existingVo
   const rows = []
   for (let i = 0; i < candidates.length; i += COLS) {
     rows.push(candidates.slice(i, i + COLS))
-  }
-
-  // ── Voting closed ────────────────────────────────────────────────────────
-  if (isClosed) {
-    return (
-      <Card>
-        <div className={styles.closedIcon}>🔒</div>
-        <h2 className={styles.h2}>Voting is closed</h2>
-        <p className={styles.sub}>
-          Voting for <strong>{monthLabel}</strong> is now closed. Check back next month!
-        </p>
-      </Card>
-    )
   }
 
   async function handleCast(reasonArg) {

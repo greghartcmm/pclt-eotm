@@ -48,6 +48,16 @@
 }
 .closeBtn:hover { color: var(--ink); }
 
+.closeNote {
+  font-size: 13px;
+  color: var(--muted);
+  background: var(--orange-tint);
+  border: 1px solid #f0d9b3;
+  border-radius: 10px;
+  padding: 8px 12px;
+  margin: 0 0 16px;
+}
+
 .stepLabel {
   font-size: 12px;
   font-weight: 700;

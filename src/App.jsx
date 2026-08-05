@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react"
-import { ROSTER, ADMINS, getVotingPeriod, initials } from "./constants.js"
+import { ROSTER, ADMINS, initials } from "./constants.js"
 import {
   resolveToken,
   getExistingVote,
@@ -7,6 +7,7 @@ import {
   hasSeenCelebration,
   markCelebrationSeen,
 } from "./supabase.js"
+import useVotingState from "./hooks/useVotingState.js"
 import { FrameBar, Card, Note, Spinner } from "./components/UI.jsx"
 import VotingView from "./components/VotingView.jsx"
 import AdminView from "./components/AdminView.jsx"
@@ -15,6 +16,7 @@ import PinGate from "./components/PinGate.jsx"
 import SplashScreen from "./components/SplashScreen.jsx"
 import HofStrip from "./components/HofStrip.jsx"
 import WinnerReveal from "./components/WinnerReveal.jsx"
+import VotingClosedScreen from "./components/VotingClosedScreen.jsx"
 import styles from "./App.module.css"
 
 export default function App() {
@@ -38,7 +40,8 @@ export default function App() {
   )
 
   const headerRef = useRef(null)
-  const { monthKey, monthLabel, isClosed } = getVotingPeriod()
+  const { monthKey, monthLabel, isOpen, loading: votingLoading } = useVotingState()
+  const isClosed = isOpen === false
 
   // Show celebration 500ms after page settles post-splash
   useEffect(() => {
@@ -71,8 +74,9 @@ export default function App() {
       return
     }
 
+    if (!monthKey) return // wait for voting state to resolve first
     initVoter(rawToken)
-  }, [])
+  }, [monthKey])
 
   async function initVoter(rawToken) {
     try {
@@ -136,6 +140,13 @@ export default function App() {
 
   // ── Admin route ──────────────────────────────────────────────────────────
   if (isAdminRoute) {
+    if (votingLoading) {
+      return (
+        <div className={styles.adminRoot}>
+          <div className={styles.pinWrap}><Card><Spinner /></Card></div>
+        </div>
+      )
+    }
     return (
       <div className={styles.adminRoot}>
         <AdminHeaderStrip monthKey={monthKey} isClosed={isClosed} />
@@ -151,6 +162,15 @@ export default function App() {
         )}
       </div>
     )
+  }
+
+  // ── Voter route: voting closed — full-screen takeover ──────────────────────
+  if (votingLoading) {
+    return <div className={styles.voterRoot}><FrameBar /></div>
+  }
+
+  if (isClosed) {
+    return <VotingClosedScreen monthLabel={monthLabel} />
   }
 
   // ── Voter route ───────────────────────────────────────────────────────────
@@ -246,7 +266,6 @@ export default function App() {
                 monthKey={monthKey}
                 monthLabel={monthLabel}
                 existingVote={existingVote}
-                isClosed={isClosed}
                 onVoteCast={(choice) => setExistingVote(choice)}
               />
             )}
