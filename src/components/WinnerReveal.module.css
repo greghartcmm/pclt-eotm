@@ -175,6 +175,11 @@
   visibility: hidden;
 }
 
+.recordingMode .comment {
+  animation: none;
+  opacity: 1;
+}
+
 @media (max-width: 600px) {
   .overlay {
     align-items: flex-start;
