@@ -206,42 +206,54 @@ export default function AdminView({ monthKey, monthLabel, isClosed }) {
         .find(t => window.MediaRecorder?.isTypeSupported(t))
       if (!mimeType) throw new Error("Video recording isn't supported in this browser — try Chrome or Edge.")
 
-      setGifStatus("Recording video…")
       const outCanvas = document.createElement("canvas")
       outCanvas.width = frames[0].width
       outCanvas.height = frames[0].height
-      const ctx = outCanvas.getContext("2d")
-      ctx.drawImage(frames[0], 0, 0)
+      outCanvas.style.position = "fixed"
+      outCanvas.style.top = "-99999px"
+      document.body.appendChild(outCanvas)
+      try {
+        const ctx = outCanvas.getContext("2d")
+        ctx.drawImage(frames[0], 0, 0)
 
-      const chunks = []
-      const recorder = new MediaRecorder(outCanvas.captureStream(10), { mimeType })
-      recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data) }
-      const stopped = new Promise(resolve => { recorder.onstop = resolve })
-      recorder.start()
+        const chunks = []
+        const recorder = new MediaRecorder(outCanvas.captureStream(10), { mimeType })
+        recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data) }
+        const recordingTimeoutMs = frames.length * COMMENT_DWELL_MS + 8000
+        const stopped = new Promise((resolve, reject) => {
+          recorder.onstop = resolve
+          recorder.onerror = e => reject(e.error || new Error("MediaRecorder error"))
+          setTimeout(() => reject(new Error("Recording timed out — try again with the tab in focus.")), recordingTimeoutMs)
+        })
+        recorder.start(500)
 
-      for (const frame of frames) {
-        ctx.drawImage(frame, 0, 0)
-        await new Promise(r => setTimeout(r, COMMENT_DWELL_MS))
+        for (let i = 0; i < frames.length; i++) {
+          ctx.drawImage(frames[i], 0, 0)
+          setGifStatus(`Recording video… (${i + 1}/${frames.length})`)
+          await new Promise(r => setTimeout(r, COMMENT_DWELL_MS))
+        }
+        recorder.stop()
+        await stopped
+
+        const blob = new Blob(chunks, { type: mimeType })
+        const ext = mimeType.includes("mp4") ? "mp4" : "webm"
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement("a")
+        a.href = url
+        a.download = `eotm-${monthKey}.${ext}`
+        a.click()
+        URL.revokeObjectURL(url)
+        setGifStatus("Downloaded!")
+      } finally {
+        outCanvas.remove()
       }
-      recorder.stop()
-      await stopped
-
-      const blob = new Blob(chunks, { type: mimeType })
-      const ext = mimeType.includes("mp4") ? "mp4" : "webm"
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement("a")
-      a.href = url
-      a.download = `eotm-${monthKey}.${ext}`
-      a.click()
-      URL.revokeObjectURL(url)
-      setGifStatus("Downloaded!")
     } catch (e) {
       console.error(e)
-      setGifStatus("Error — try again")
+      setGifStatus(e.message || "Error — try again")
     } finally {
       setGifIndex(null)
       setGifRecording(false)
-      setTimeout(() => setGifStatus(""), 3000)
+      setTimeout(() => setGifStatus(""), 4000)
     }
   }
 
