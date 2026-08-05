@@ -123,6 +123,7 @@
   line-height: 1.5;
   margin-bottom: 0.3rem;
   max-width: 480px;
+  min-height: 2.6em;
   margin-left: auto;
   margin-right: auto;
   animation: commentFade 0.4s ease;
@@ -149,6 +150,30 @@
   transition: filter 0.13s;
 }
 .cta:hover { filter: brightness(1.06); }
+
+.recordBtn {
+  display: block;
+  margin: 0.9rem auto 0;
+  background: none;
+  border: 1.5px solid #C8E8F4;
+  color: #219EBC;
+  font-weight: 700;
+  font-size: 0.82rem;
+  border-radius: 10px;
+  padding: 0.55rem 1.2rem;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.13s, border-color 0.13s;
+}
+.recordBtn:hover:not(:disabled) { background: #EDF7FC; border-color: #8ECAE6; }
+.recordBtn:disabled { opacity: 0.65; cursor: default; }
+
+.recordingMode .close,
+.recordingMode .cta,
+.recordingMode .recordBtn,
+.recordingMode .confetti {
+  visibility: hidden;
+}
 
 @media (max-width: 600px) {
   .overlay {

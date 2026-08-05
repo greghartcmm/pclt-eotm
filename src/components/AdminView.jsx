@@ -1,4 +1,7 @@
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
+import html2canvas from "html2canvas"
+import GIF from "gif.js"
+import gifWorkerUrl from "gif.js/dist/gif.worker.js?url"
 import { ROSTER, TOKEN_MAP, colorFor, initials } from "../constants.js"
 import {
   getVotes,
@@ -14,8 +17,11 @@ import { Avatar, Note, Spinner } from "./UI.jsx"
 import ConfirmModal from "./ConfirmModal.jsx"
 import DeclareWinnerModal from "./DeclareWinnerModal.jsx"
 import CelebrationOverlay from "./CelebrationOverlay.jsx"
+import WinnerReveal, { COMMENT_DWELL_MS } from "./WinnerReveal.jsx"
 import styles from "./AdminView.module.css"
 import modalStyles from "./ConfirmModal.module.css"
+
+const GIF_FRAME_SETTLE_MS = 400
 
 function getCloseLabel(monthKey) {
   const [year, mo] = monthKey.split('-').map(Number)
@@ -55,6 +61,11 @@ export default function AdminView({ monthKey, monthLabel, isClosed }) {
   const [declareModalOpen, setDeclareModalOpen] = useState(false)
   const [actionLoading, setActionLoading]     = useState(false)
   const [actionError, setActionError]         = useState("")
+  const [revealOpen, setRevealOpen]           = useState(false)
+  const [gifIndex, setGifIndex]               = useState(null)
+  const [gifRecording, setGifRecording]       = useState(false)
+  const [gifStatus, setGifStatus]             = useState("")
+  const revealCardRef = useRef(null)
   const [celebrationData, setCelebrationData] = useState(null)
 
   const counts = {}
@@ -158,6 +169,53 @@ export default function AdminView({ monthKey, monthLabel, isClosed }) {
     })
   }
 
+  async function handleRecordGif(comments) {
+    if (gifRecording || !revealCardRef.current) return
+    setGifRecording(true)
+    setGifStatus("Capturing…")
+    try {
+      const frames = []
+      const frameCount = Math.max(comments.length, 1)
+      for (let i = 0; i < frameCount; i++) {
+        setGifIndex(i)
+        await new Promise(r => setTimeout(r, GIF_FRAME_SETTLE_MS))
+        const canvas = await html2canvas(revealCardRef.current, {
+          scale: 2,
+          backgroundColor: "#ffffff",
+        })
+        frames.push(canvas)
+      }
+      setGifStatus("Encoding GIF…")
+      const gif = new GIF({
+        workers: 2,
+        quality: 10,
+        workerScript: gifWorkerUrl,
+        width: frames[0].width,
+        height: frames[0].height,
+      })
+      frames.forEach(canvas => gif.addFrame(canvas, { delay: COMMENT_DWELL_MS, copy: true }))
+      const blob = await new Promise((resolve, reject) => {
+        gif.on("finished", resolve)
+        gif.on("abort", () => reject(new Error("GIF encoding aborted")))
+        gif.render()
+      })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = `eotm-${monthKey}.gif`
+      a.click()
+      URL.revokeObjectURL(url)
+      setGifStatus("Downloaded!")
+    } catch (e) {
+      console.error(e)
+      setGifStatus("Error — try again")
+    } finally {
+      setGifIndex(null)
+      setGifRecording(false)
+      setTimeout(() => setGifStatus(""), 3000)
+    }
+  }
+
   function voteLink(name) {
     return `${window.location.origin}${window.location.pathname}?token=${TOKEN_MAP[name]}`
   }
@@ -227,6 +285,14 @@ export default function AdminView({ monthKey, monthLabel, isClosed }) {
                 >
                   🏆 {winner ? "Edit winner" : "Declare winner"}
                 </button>
+                {winner && (
+                  <button
+                    className={styles.btnRefresh}
+                    onClick={() => setRevealOpen(true)}
+                  >
+                    🎉 Show reveal popup
+                  </button>
+                )}
               </div>
 
               {error && <Note variant="magenta">{error}</Note>}
@@ -441,6 +507,19 @@ export default function AdminView({ monthKey, monthLabel, isClosed }) {
         <CelebrationOverlay
           data={celebrationData}
           onClose={() => setCelebrationData(null)}
+        />
+      )}
+
+      {revealOpen && winner && (
+        <WinnerReveal
+          winner={{ ...winner, label: monthLabel }}
+          isPreview={false}
+          onDismiss={() => { setRevealOpen(false); setGifIndex(null) }}
+          cardRef={revealCardRef}
+          controlledIndex={gifIndex}
+          onRecordGif={() => handleRecordGif(winner.comments || [])}
+          recording={gifRecording}
+          recordStatus={gifStatus}
         />
       )}
     </>

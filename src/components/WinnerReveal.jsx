@@ -2,21 +2,23 @@ import { useEffect, useMemo, useState } from "react"
 import { Portrait } from "./HofStrip.jsx"
 import styles from "./WinnerReveal.module.css"
 
-const COMMENT_DWELL_MS = 2750
+export const COMMENT_DWELL_MS = 2750
 
-function useCyclingComments(comments) {
+function useCyclingComments(comments, controlledIndex) {
   const [index, setIndex] = useState(0)
+  const isControlled = controlledIndex != null
 
   useEffect(() => {
+    if (isControlled) return
     setIndex(0)
     if (comments.length < 2) return
     const id = setInterval(() => {
       setIndex(i => (i + 1) % comments.length)
     }, COMMENT_DWELL_MS)
     return () => clearInterval(id)
-  }, [comments])
+  }, [comments, isControlled])
 
-  return comments[index]
+  return isControlled ? controlledIndex : index
 }
 
 function useConfetti() {
@@ -37,7 +39,16 @@ function useConfetti() {
   }, [])
 }
 
-export default function WinnerReveal({ winner, isPreview, onDismiss }) {
+export default function WinnerReveal({
+  winner,
+  isPreview,
+  onDismiss,
+  cardRef,
+  controlledIndex,
+  onRecordGif,
+  recording,
+  recordStatus,
+}) {
   const confetti = useConfetti()
   const comments = useMemo(
     () => (winner.comments && winner.comments.length > 0
@@ -45,7 +56,8 @@ export default function WinnerReveal({ winner, isPreview, onDismiss }) {
       : (winner.featuredComment ? [winner.featuredComment] : [])),
     [winner]
   )
-  const activeComment = useCyclingComments(comments)
+  const index = useCyclingComments(comments, controlledIndex)
+  const activeComment = comments[index]
   const names = winner.winners
   const firstNames = names.map(n => n.split(' ')[0])
   const headline = firstNames.length > 1
@@ -55,8 +67,9 @@ export default function WinnerReveal({ winner, isPreview, onDismiss }) {
   return (
     <div className={styles.overlay} onClick={onDismiss}>
       <div
-        className={`${styles.card} ${isPreview ? styles.cardPreview : ""}`}
+        className={`${styles.card} ${isPreview ? styles.cardPreview : ""} ${recording ? styles.recordingMode : ""}`}
         onClick={e => e.stopPropagation()}
+        ref={cardRef}
       >
         {confetti.map(c => (
           <div
@@ -95,12 +108,18 @@ export default function WinnerReveal({ winner, isPreview, onDismiss }) {
         <div className={styles.headline}>{headline}</div>
 
         {activeComment && (
-          <div key={activeComment} className={styles.comment}>{activeComment}</div>
+          <div key={index} className={styles.comment}>{activeComment}</div>
         )}
 
         <button className={styles.cta} onClick={onDismiss}>
           Let's vote →
         </button>
+
+        {onRecordGif && (
+          <button className={styles.recordBtn} onClick={onRecordGif} disabled={recording}>
+            {recording ? (recordStatus || "Recording…") : "🎬 Save GIF for Teams"}
+          </button>
+        )}
       </div>
     </div>
   )
