@@ -203,7 +203,8 @@ export default function AdminView({ monthKey, monthLabel, isClosed }) {
       setGifStatus("Encoding GIF…")
       const gif = new GIF({
         workers: 2,
-        quality: 10,
+        quality: 1,
+        dither: "FloydSteinberg",
         workerScript: gifWorkerUrl,
         width: frames[0].width,
         height: frames[0].height,
