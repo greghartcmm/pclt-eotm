@@ -178,6 +178,9 @@
 .recordingMode .comment {
   animation: none;
   opacity: 1;
+  /* html2canvas rasterizes this text noticeably lighter than the real
+     CSS color, so compensate with a much darker tone for the export. */
+  color: #023047;
 }
 
 @media (max-width: 600px) {
