@@ -1,7 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react"
 import html2canvas from "html2canvas"
-import GIF from "gif.js"
-import gifWorkerUrl from "gif.js/dist/gif.worker.js?url"
 import { ROSTER, TOKEN_MAP, colorFor, initials, monthLabelFromKey, nextMonthKey } from "../constants.js"
 import {
   getVotes,
@@ -200,25 +198,40 @@ export default function AdminView({ monthKey, monthLabel, isClosed }) {
         })
         frames.push(canvas)
       }
-      setGifStatus("Encoding GIF…")
-      const gif = new GIF({
-        workers: 2,
-        quality: 1,
-        dither: "FloydSteinberg",
-        workerScript: gifWorkerUrl,
-        width: frames[0].width,
-        height: frames[0].height,
-      })
-      frames.forEach(canvas => gif.addFrame(canvas, { delay: COMMENT_DWELL_MS, copy: true }))
-      const blob = await new Promise((resolve, reject) => {
-        gif.on("finished", resolve)
-        gif.on("abort", () => reject(new Error("GIF encoding aborted")))
-        gif.render()
-      })
+
+      // GIF's 256-color palette visibly muddies these illustrated portraits —
+      // record real video from the same captured frames instead, which has
+      // no such color-depth ceiling.
+      const mimeType = ["video/webm;codecs=vp9", "video/webm;codecs=vp8", "video/webm", "video/mp4"]
+        .find(t => window.MediaRecorder?.isTypeSupported(t))
+      if (!mimeType) throw new Error("Video recording isn't supported in this browser — try Chrome or Edge.")
+
+      setGifStatus("Recording video…")
+      const outCanvas = document.createElement("canvas")
+      outCanvas.width = frames[0].width
+      outCanvas.height = frames[0].height
+      const ctx = outCanvas.getContext("2d")
+      ctx.drawImage(frames[0], 0, 0)
+
+      const chunks = []
+      const recorder = new MediaRecorder(outCanvas.captureStream(10), { mimeType })
+      recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data) }
+      const stopped = new Promise(resolve => { recorder.onstop = resolve })
+      recorder.start()
+
+      for (const frame of frames) {
+        ctx.drawImage(frame, 0, 0)
+        await new Promise(r => setTimeout(r, COMMENT_DWELL_MS))
+      }
+      recorder.stop()
+      await stopped
+
+      const blob = new Blob(chunks, { type: mimeType })
+      const ext = mimeType.includes("mp4") ? "mp4" : "webm"
       const url = URL.createObjectURL(blob)
       const a = document.createElement("a")
       a.href = url
-      a.download = `eotm-${monthKey}.gif`
+      a.download = `eotm-${monthKey}.${ext}`
       a.click()
       URL.revokeObjectURL(url)
       setGifStatus("Downloaded!")

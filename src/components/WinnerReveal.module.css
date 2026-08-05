@@ -175,13 +175,9 @@
   visibility: hidden;
 }
 
-.recordingMode .comment {
-  animation: none;
-  opacity: 1;
-  /* html2canvas rasterizes this text noticeably lighter than the real
-     CSS color, so compensate with a much darker tone for the export. */
-  color: #023047;
-}
+/* Comment's recording-mode override is applied inline in WinnerReveal.jsx —
+   html2canvas doesn't reliably resolve this class-based rule when cloning
+   the DOM, so a class rule here would silently do nothing during export. */
 
 @media (max-width: 600px) {
   .overlay {

@@ -108,7 +108,16 @@ export default function WinnerReveal({
         <div className={styles.headline}>{headline}</div>
 
         {activeComment && (
-          <div key={index} className={styles.comment}>{activeComment}</div>
+          <div
+            key={index}
+            className={styles.comment}
+            // A single capture can otherwise land mid-fade — freeze it at
+            // full opacity instead of relying on the class-based override,
+            // which html2canvas doesn't reliably resolve when cloning the DOM.
+            style={recording ? { animation: "none", opacity: 1 } : undefined}
+          >
+            {activeComment}
+          </div>
         )}
 
         <button className={styles.cta} onClick={onDismiss}>
@@ -117,7 +126,7 @@ export default function WinnerReveal({
 
         {onRecordGif && (
           <button className={styles.recordBtn} onClick={onRecordGif} disabled={recording}>
-            {recording ? (recordStatus || "Recording…") : "🎬 Save GIF for Teams"}
+            {recording ? (recordStatus || "Recording…") : "🎬 Save video for Teams"}
           </button>
         )}
       </div>
