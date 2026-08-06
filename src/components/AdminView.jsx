@@ -202,8 +202,16 @@ export default function AdminView({ monthKey, monthLabel, isClosed }) {
       // GIF's 256-color palette visibly muddies these illustrated portraits —
       // record real video from the same captured frames instead, which has
       // no such color-depth ceiling.
-      const mimeType = ["video/webm;codecs=vp9", "video/webm;codecs=vp8", "video/webm", "video/mp4"]
-        .find(t => window.MediaRecorder?.isTypeSupported(t))
+      // MP4/H.264 first — it's what Teams embeds most reliably, and its color
+      // handling is far more standardized across players than canvas-recorded
+      // WebM/VP9, which often lacks proper color-space metadata.
+      const mimeType = [
+        "video/mp4;codecs=avc1",
+        "video/mp4",
+        "video/webm;codecs=vp9",
+        "video/webm;codecs=vp8",
+        "video/webm",
+      ].find(t => window.MediaRecorder?.isTypeSupported(t))
       if (!mimeType) throw new Error("Video recording isn't supported in this browser — try Chrome or Edge.")
 
       const outCanvas = document.createElement("canvas")
