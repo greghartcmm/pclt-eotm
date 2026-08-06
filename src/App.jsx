@@ -17,7 +17,10 @@ import SplashScreen from "./components/SplashScreen.jsx"
 import HofStrip from "./components/HofStrip.jsx"
 import WinnerReveal from "./components/WinnerReveal.jsx"
 import VotingClosedScreen from "./components/VotingClosedScreen.jsx"
+import WinnerLinkView from "./components/WinnerLinkView.jsx"
 import styles from "./App.module.css"
+
+const WINNER_LINK_KEY = "pclteotm"
 
 export default function App() {
   const [appState, setAppState] = useState("loading")
@@ -137,6 +140,11 @@ export default function App() {
   }
 
   const isAdmin = ADMINS.includes(voterName)
+
+  // ── Standalone winner link — just the reveal popup, nothing else ───────────
+  if (new URLSearchParams(window.location.search).get("key") === WINNER_LINK_KEY) {
+    return <WinnerLinkView />
+  }
 
   // ── Admin route ──────────────────────────────────────────────────────────
   if (isAdminRoute) {

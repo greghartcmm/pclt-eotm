@@ -48,6 +48,7 @@ export default function WinnerReveal({
   onRecordGif,
   recording,
   recordStatus,
+  hideCta,
 }) {
   const confetti = useConfetti()
   const comments = useMemo(
@@ -120,9 +121,11 @@ export default function WinnerReveal({
           </div>
         )}
 
-        <button className={styles.cta} onClick={onDismiss}>
-          Let's vote →
-        </button>
+        {!hideCta && (
+          <button className={styles.cta} onClick={onDismiss}>
+            Let's vote →
+          </button>
+        )}
 
         {onRecordGif && (
           <button className={styles.recordBtn} onClick={onRecordGif} disabled={recording}>

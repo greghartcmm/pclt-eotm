@@ -188,6 +188,25 @@ export async function markCelebrationSeen(token, winnerMonth) {
     .upsert({ token, winner_month: winnerMonth }, { onConflict: 'token,winner_month' })
 }
 
+export async function getLatestWinner() {
+  const { data, error } = await supabase
+    .from('winners')
+    .select('month, winner_names, featured_comment, all_comments, vote_count, total_votes')
+    .order('month', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+  if (error || !data) return null
+  return {
+    month: data.month,
+    label: monthLabelFromKey(data.month),
+    winners: data.winner_names,
+    voteCount: data.vote_count,
+    totalVotes: data.total_votes,
+    featuredComment: data.featured_comment || null,
+    comments: resolveComments(data.featured_comment, data.all_comments),
+  }
+}
+
 export async function getAllWinners() {
   const { data, error } = await supabase
     .from('winners')
