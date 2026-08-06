@@ -225,11 +225,10 @@ export async function getAllWinners() {
   }))
 }
 
-export async function getWinnerHistory(currentMonthKey) {
+export async function getWinnerHistory() {
   const { data, error } = await supabase
     .from('winners')
     .select('month, winner_names, featured_comment, all_comments, vote_count, total_votes')
-    .neq('month', currentMonthKey)
     .order('month', { ascending: false })
     .limit(12)
   if (error || !data) return []

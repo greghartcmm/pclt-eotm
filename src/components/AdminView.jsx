@@ -103,7 +103,7 @@ export default function AdminView({ monthKey, monthLabel, isClosed }) {
 
   const loadHistory = useCallback(async () => {
     setHistoryErr(false); setHistory(null)
-    const data = await getWinnerHistory(monthKey)
+    const data = await getWinnerHistory()
     if (!data) setHistoryErr(true)
     else setHistory(data)
   }, [])
