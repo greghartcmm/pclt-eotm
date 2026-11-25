@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PCLT EotM — Winner Celebration Overlay (Design Guidance)</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --navy:  #023047;
+    --teal:  #219EBC;
+    --sky:   #8ECAE6;
+    --amber: #FFB703;
+    --orange:#FB8500;
+    --white: #FFFFFF;
+    --bg:    #F4F7F9;
+    --gray:  #6b7f8a;
+    --border:#E4ECF0;
+    --font:  -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+
+  body { font-family: var(--font); background: #111827; padding: 2rem 1rem; display: flex; flex-direction: column; align-items: center; gap: 0; }
+
+  /* ── Control panel ── */
+  .switcher {
+    width: 100%; max-width: 420px;
+    background: #0a0a14; border-radius: 10px 10px 0 0;
+    padding: 12px 16px;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .sw-label { font-size: 0.6rem; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; color: rgba(255,255,255,0.3); }
+  .sw-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .sw-btn { font-family: var(--font); font-size: 0.72rem; font-weight: 700; padding: 7px 12px; border-radius: 6px; border: 1.5px solid rgba(255,255,255,0.14); cursor: pointer; background: transparent; color: rgba(255,255,255,0.55); transition: all 0.13s; flex: 1; }
+  .sw-btn.primary { background: var(--amber); color: var(--navy); border-color: var(--amber); }
+  .sw-btn.primary:hover { filter: brightness(1.08); }
+  .sw-btn:not(.primary):hover { color: white; border-color: rgba(255,255,255,0.3); }
+  .sw-note { font-size: 0.66rem; color: rgba(255,255,255,0.3); line-height: 1.4; }
+
+  /* ── Phone frame ── */
+  .mockup { width: 100%; max-width: 420px; height: 720px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.5); position: relative; background: white; }
+
+  /* ══ Splash (schematic placeholder — existing screen, unchanged) ══ */
+  .splash {
+    position: absolute; inset: 0; z-index: 50;
+    background: var(--navy);
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem;
+    opacity: 1; transition: opacity 0.4s ease;
+  }
+  .splash.hidden { opacity: 0; pointer-events: none; }
+  .splash-mark { width: 52px; height: 52px; border-radius: 14px; background: var(--amber); display: flex; align-items: center; justify-content: center; font-size: 1.6rem; }
+  .splash-title { font-family: Georgia, serif; font-weight: 800; color: white; font-size: 1rem; text-align: center; }
+  .splash-sub { font-size: 0.68rem; color: rgba(255,255,255,0.4); letter-spacing: 0.08em; text-transform: uppercase; }
+  .splash-dots { display: flex; gap: 5px; margin-top: 0.5rem; }
+  .splash-dots span { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,0.35); animation: dotPulse 1.1s infinite ease-in-out; }
+  .splash-dots span:nth-child(2) { animation-delay: 0.15s; }
+  .splash-dots span:nth-child(3) { animation-delay: 0.3s; }
+  @keyframes dotPulse { 0%,80%,100% { opacity: 0.3; transform: scale(0.85); } 40% { opacity: 1; transform: scale(1); } }
+  .splash-flag { position: absolute; bottom: 1rem; left: 0; right: 0; text-align: center; font-size: 0.6rem; color: rgba(255,255,255,0.25); letter-spacing: 0.05em; }
+
+  /* ══ Voting page ══ */
+  .voting-page { position: absolute; inset: 0; overflow-y: auto; opacity: 0; transform: translateY(6px); transition: opacity 0.45s ease, transform 0.45s ease; }
+  .voting-page.in { opacity: 1; transform: translateY(0); }
+
+  .hero { background: var(--navy); padding: 1.6rem 1.5rem 1.9rem; text-align: center; position: relative; }
+  .voter-id { position: absolute; top: 0.75rem; right: 1rem; display: flex; align-items: center; gap: 6px; cursor: pointer; border-radius: 20px; padding: 3px 6px 3px 3px; transition: background 0.13s; }
+  .voter-id:hover { background: rgba(255,255,255,0.08); }
+  .voter-id.admin .voter-av { box-shadow: 0 0 0 2px rgba(255,183,3,0.5); }
+  .voter-av { width: 22px; height: 22px; border-radius: 50%; background: rgba(255,255,255,0.12); border: 1.5px solid rgba(255,255,255,0.2); color: rgba(255,255,255,0.7); font-size: 0.48rem; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .voter-text { font-size: 0.62rem; color: rgba(255,255,255,0.38); white-space: nowrap; }
+  .voter-text strong { color: rgba(255,255,255,0.58); font-weight: 700; }
+
+  .admin-menu { position: absolute; top: 34px; right: 0; background: white; border-radius: 10px; box-shadow: 0 12px 32px rgba(0,0,0,0.35); padding: 5px; min-width: 168px; opacity: 0; transform: translateY(-4px); pointer-events: none; transition: opacity 0.13s, transform 0.13s; z-index: 20; }
+  .admin-menu.open { opacity: 1; transform: translateY(0); pointer-events: auto; }
+  .admin-menu button { display: flex; align-items: center; gap: 7px; width: 100%; text-align: left; background: none; border: none; font-family: var(--font); font-size: 0.72rem; font-weight: 700; color: var(--navy); padding: 8px 9px; border-radius: 7px; cursor: pointer; }
+  .admin-menu button:hover { background: #F0F5F8; }
+  .hero-eyebrow { font-size: 0.56rem; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: var(--sky); opacity: 0.6; margin-bottom: 0.3rem; }
+  .hero-title { font-family: Georgia, serif; font-size: 1.55rem; font-weight: 900; color: white; text-transform: uppercase; line-height: 1.05; margin-bottom: 0.25rem; }
+  .hero-title em { color: var(--amber); font-style: normal; display: block; }
+  .hero-month { font-size: 0.75rem; font-weight: 700; color: var(--amber); }
+
+  .hof-strip { background: white; border-bottom: 1px solid var(--border); padding: 0.75rem 1.25rem; display: flex; align-items: center; gap: 1rem; cursor: pointer; }
+  .portrait-circle { border-radius: 50%; overflow: hidden; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-weight: 800; color: white; font-size: 0.75rem; }
+  .hof-winner { display: flex; align-items: center; gap: 0.75rem; flex: 1; min-width: 0; }
+  .hof-kicker { font-size: 0.53rem; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--teal); margin-bottom: 2px; }
+  .hof-name { font-family: Georgia, serif; font-size: 0.9rem; font-weight: 800; color: var(--navy); margin-bottom: 1px; line-height: 1.1; }
+  .hof-comment { font-size: 0.65rem; color: var(--gray); font-style: italic; }
+  .hof-comment::before { content: '"'; } .hof-comment::after { content: '"'; }
+
+  .page-bg { background: var(--bg); padding: 1.25rem 1rem 2rem; min-height: 300px; }
+  .ballot { background: white; border: 1px solid var(--border); border-radius: 12px; padding: 1.1rem 1.25rem 1.3rem; box-shadow: 0 2px 12px rgba(2,48,71,0.06); }
+  .ballot-heading { font-size: 0.95rem; font-weight: 800; color: var(--navy); margin-bottom: 0.15rem; }
+  .ballot-sub { font-size: 0.7rem; color: var(--gray); margin-bottom: 1rem; }
+  .candidate-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 7px; }
+  .cand { display: flex; align-items: center; gap: 8px; background: white; border: 1.5px solid var(--border); border-radius: 8px; padding: 9px 10px; }
+  .cav { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.58rem; font-weight: 800; color: white; flex-shrink: 0; }
+  .cn { font-size: 0.72rem; font-weight: 600; color: var(--navy); line-height: 1.2; }
+  .c-navy{background:#023047} .c-orange{background:#FB8500} .c-teal{background:#3a86c8} .c-pink{background:#E63946} .c-purple{background:#7B5EA7} .c-magenta{background:#D63384}
+
+  /* ══ Celebration overlay ══ */
+  .celebrate-overlay {
+    position: absolute; inset: 0; z-index: 100;
+    background: rgba(2,48,71,0.72);
+    display: flex; align-items: center; justify-content: center;
+    padding: 1.5rem;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.25s ease;
+  }
+  .celebrate-overlay.open { opacity: 1; pointer-events: auto; }
+
+  .celebrate-card {
+    background: white; border-radius: 20px;
+    max-width: 320px; width: 100%;
+    padding: 2rem 1.4rem 1.5rem;
+    text-align: center; position: relative;
+    box-shadow: 0 28px 70px rgba(0,0,0,0.5);
+    transform: scale(0.88) translateY(8px); opacity: 0;
+    transition: transform 0.32s cubic-bezier(0.34,1.56,0.64,1), opacity 0.28s ease;
+  }
+  .celebrate-overlay.open .celebrate-card { transform: scale(1) translateY(0); opacity: 1; }
+
+  .cel-close { position: absolute; top: 10px; right: 12px; background: none; border: none; color: #C4CFD5; font-size: 1.2rem; cursor: pointer; padding: 4px 8px; line-height: 1; }
+  .cel-close:hover { color: var(--gray); }
+
+  .cel-portrait-wrap { position: relative; width: 116px; height: 116px; margin: 0 auto 1rem; }
+  .cel-ring { position: absolute; inset: -8px; border-radius: 50%; background: rgba(255,183,3,0.15); }
+  .cel-portrait { position: relative; width: 116px; height: 116px; border-radius: 50%; border: 5px solid var(--amber); background: linear-gradient(135deg, #7B5EA7, #3a86c8); display: flex; align-items: center; justify-content: center; font-family: Georgia, serif; font-size: 2.1rem; font-weight: 800; color: white; }
+
+  .cel-kicker { font-size: 0.56rem; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--teal); margin-bottom: 0.4rem; }
+  .cel-headline { font-family: Georgia, serif; font-size: 1.5rem; font-weight: 900; color: var(--navy); line-height: 1.15; margin-bottom: 0.5rem; }
+  .cel-comment { font-size: 0.74rem; color: var(--gray); font-style: italic; line-height: 1.4; margin-bottom: 0.2rem; }
+  .cel-comment::before { content: '"'; } .cel-comment::after { content: '"'; }
+
+  .cel-cta { background: var(--amber); color: var(--navy); font-weight: 800; font-size: 0.8rem; border-radius: 10px; padding: 0.65rem 1.4rem; border: none; cursor: pointer; margin-top: 1.15rem; font-family: var(--font); }
+  .cel-cta:hover { filter: brightness(1.05); }
+
+  .cel-preview-badge { display: none; position: absolute; top: -10px; left: 50%; transform: translateX(-50%); background: var(--navy); color: var(--sky); font-size: 0.56rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; padding: 4px 12px; border-radius: 20px; white-space: nowrap; box-shadow: 0 4px 12px rgba(0,0,0,0.25); }
+  .celebrate-card.is-preview { border: 2px dashed var(--sky); }
+  .celebrate-card.is-preview .cel-preview-badge { display: block; }
+
+  /* Confetti — one-shot burst, disabled under reduced motion */
+  .confetti { position: absolute; width: 8px; height: 8px; border-radius: 2px; opacity: 0; }
+  @media (prefers-reduced-motion: no-preference) {
+    .celebrate-overlay.open .confetti { animation: confettiBurst 1.1s ease-out forwards; }
+  }
+  @keyframes confettiBurst {
+    0%   { opacity: 0; transform: translate(0,0) rotate(0deg); }
+    8%   { opacity: 1; }
+    100% { opacity: 0; transform: translate(var(--dx), var(--dy)) rotate(var(--rot)); }
+  }
+
+  /* ── Annotation labels ── */
+  .annot { background: rgba(255,183,3,0.14); border: 1px solid rgba(255,183,3,0.35); border-radius: 6px; padding: 5px 10px; margin: 6px 0 0; font-size: 0.62rem; color: #B87F00; font-weight: 600; line-height: 1.4; }
+  .annot-wrap { padding: 6px 12px 0; }
+</style>
+</head>
+<body>
+
+<div class="switcher">
+  <div class="sw-label">Play the sequence</div>
+  <div class="sw-row">
+    <button class="sw-btn primary" id="btn-first">▶ First-time visitor</button>
+    <button class="sw-btn" id="btn-return">▶ Returning visitor</button>
+  </div>
+  <div class="sw-note" id="status-note">Voter hasn't seen August's winner yet → celebration will show after the splash.</div>
+  <div class="sw-note">Admin-only: click the avatar (top-right of the voting page below) → "Simulate winner" to preview with a random candidate — no real winner declared.</div>
+</div>
+
+<div class="mockup">
+
+  <!-- Splash — schematic placeholder, existing screen, unchanged -->
+  <div class="splash" id="splash">
+    <div class="splash-mark">⭐</div>
+    <div class="splash-title">PCLT Employee<br>of the Month</div>
+    <div class="splash-sub">Loading ballot…</div>
+    <div class="splash-dots"><span></span><span></span><span></span></div>
+    <div class="splash-flag">existing splash — unchanged by this feature</div>
+  </div>
+
+  <!-- Voting page -->
+  <div class="voting-page" id="voting-page">
+    <div class="hero">
+      <div class="voter-id admin" id="voter-id">
+        <div class="voter-av">GH</div>
+        <span class="voter-text">Voting as <strong>Greg</strong></span>
+        <div class="admin-menu" id="admin-menu">
+          <button id="btn-simulate-inline">🎲 Simulate winner</button>
+        </div>
+      </div>
+      <div class="hero-eyebrow">PCLT Presents</div>
+      <div class="hero-title">Employee of<br><em>the Month</em></div>
+      <div class="hero-month">Vote closes Friday, 5pm</div>
+    </div>
+
+    <div class="hof-strip">
+      <div class="hof-winner">
+        <div class="portrait-circle" style="width:44px;height:44px;background:linear-gradient(135deg,#7B5EA7,#3a86c8)">MW</div>
+        <div>
+          <div class="hof-kicker">July 2026 Winner</div>
+          <div class="hof-name">Mike Waldman</div>
+          <div class="hof-comment">Brought snacks to every meeting. Every one.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="page-bg">
+      <div class="ballot">
+        <div class="ballot-heading">Cast your vote</div>
+        <div class="ballot-sub">Pick this month's PCLT standout</div>
+        <div class="candidate-grid">
+          <div class="cand"><div class="cav c-navy">SB</div><div class="cn">Sandhya B.</div></div>
+          <div class="cand"><div class="cav c-orange">KD</div><div class="cn">Kyle D.</div></div>
+          <div class="cand"><div class="cav c-teal">MB</div><div class="cn">Matt B.</div></div>
+          <div class="cand"><div class="cav c-purple">BB</div><div class="cn">Ben B.</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Celebration overlay -->
+    <div class="celebrate-overlay" id="celebrate-overlay">
+      <div class="celebrate-card" id="celebrate-card">
+        <div class="cel-preview-badge">Preview — not a real announcement</div>
+        <button class="cel-close" id="cel-close">✕</button>
+        <div class="cel-portrait-wrap">
+          <div class="cel-ring"></div>
+          <div class="cel-portrait">MW</div>
+        </div>
+        <div class="cel-kicker">🎉 August 2026 Winner</div>
+        <div class="cel-headline">Congrats,<br>Mike!</div>
+        <div class="cel-comment">Brought snacks to every meeting. Every one.</div>
+        <button class="cel-cta" id="cel-cta">Let's vote →</button>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+<div class="annot-wrap">
+  <div class="annot">Overlay mounts ~500ms after the voting page settles — not in the same beat as the splash transition. Dismiss (✕ / backdrop / CTA) writes token+month to <code>celebration_seen</code>, so "Returning visitor" never sees it again for August.</div>
+</div>
+
+<script>
+  const splash = document.getElementById('splash');
+  const votingPage = document.getElementById('voting-page');
+  const overlay = document.getElementById('celebrate-overlay');
+  const note = document.getElementById('status-note');
+  let timers = [];
+
+  function clearTimers() { timers.forEach(clearTimeout); timers = []; }
+
+  function restoreRealWinner() {
+    document.querySelector('.cel-portrait').textContent = 'MW';
+    document.querySelector('.cel-portrait').style.background = 'linear-gradient(135deg,#7B5EA7,#3a86c8)';
+    document.querySelector('.cel-kicker').textContent = '🎉 August 2026 Winner';
+    document.querySelector('.cel-headline').innerHTML = 'Congrats,<br>Mike!';
+    document.querySelector('.cel-comment').textContent = 'Brought snacks to every meeting. Every one.';
+    document.getElementById('celebrate-card').classList.remove('is-preview');
+  }
+
+  function resetFrame() {
+    clearTimers();
+    splash.classList.remove('hidden');
+    votingPage.classList.remove('in');
+    overlay.classList.remove('open');
+    restoreRealWinner();
+    spawnConfetti(); // pre-seed positions (won't animate until .open)
+  }
+
+  function playSequence(showCelebration) {
+    resetFrame();
+    note.textContent = showCelebration
+      ? "Voter hasn't seen August's winner yet → celebration will show after the splash."
+      : "Voter already saw August's winner → straight to the ballot, no overlay.";
+
+    timers.push(setTimeout(() => {
+      splash.classList.add('hidden');
+      votingPage.classList.add('in');
+    }, 1100));
+
+    if (showCelebration) {
+      timers.push(setTimeout(() => {
+        overlay.classList.add('open');
+      }, 1100 + 500));
+    }
+  }
+
+  function spawnConfetti() {
+    document.querySelectorAll('.confetti').forEach(el => el.remove());
+    const colors = ['#FFB703', '#FB8500', '#219EBC', '#8ECAE6', '#D63384'];
+    const card = document.getElementById('celebrate-card');
+    for (let i = 0; i < 14; i++) {
+      const el = document.createElement('div');
+      el.className = 'confetti';
+      const angle = (Math.PI * 2 * i) / 14 + Math.random() * 0.4;
+      const dist = 90 + Math.random() * 70;
+      el.style.setProperty('--dx', Math.cos(angle) * dist + 'px');
+      el.style.setProperty('--dy', Math.sin(angle) * dist - 30 + 'px');
+      el.style.setProperty('--rot', (Math.random() * 360) + 'deg');
+      el.style.left = '50%';
+      el.style.top = '38%';
+      el.style.background = colors[i % colors.length];
+      el.style.animationDelay = (Math.random() * 0.15) + 's';
+      card.appendChild(el);
+    }
+  }
+
+  document.getElementById('btn-first').addEventListener('click', () => playSequence(true));
+  document.getElementById('btn-return').addEventListener('click', () => playSequence(false));
+
+  function dismiss() {
+    overlay.classList.remove('open');
+    document.getElementById('celebrate-card').classList.remove('is-preview');
+  }
+  document.getElementById('cel-close').addEventListener('click', dismiss);
+  document.getElementById('cel-cta').addEventListener('click', dismiss);
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) dismiss(); });
+
+  // ── Admin: simulate winner (preview mode) ──
+  const voterId = document.getElementById('voter-id');
+  const adminMenu = document.getElementById('admin-menu');
+  const candidates = [
+    { initials: 'SB', name: 'Sandhya', color: 'linear-gradient(135deg,#023047,#3a86c8)' },
+    { initials: 'KD', name: 'Kyle',    color: 'linear-gradient(135deg,#FB8500,#FFB703)' },
+    { initials: 'MB', name: 'Matt',    color: 'linear-gradient(135deg,#3a86c8,#8ECAE6)' },
+    { initials: 'BB', name: 'Ben',     color: 'linear-gradient(135deg,#7B5EA7,#D63384)' },
+  ];
+  const sampleComments = [
+    'Always first to volunteer for the tough tickets.',
+    "Never misses a standup, rain or shine.",
+    'The Slack status updates alone deserve an award.',
+  ];
+
+  voterId.addEventListener('click', (e) => {
+    adminMenu.classList.toggle('open');
+    e.stopPropagation();
+  });
+  document.addEventListener('click', (e) => {
+    if (!voterId.contains(e.target)) adminMenu.classList.remove('open');
+  });
+
+  function simulateWinner() {
+    adminMenu.classList.remove('open');
+    clearTimers();
+    splash.classList.add('hidden');
+    votingPage.classList.add('in');
+
+    const pick = candidates[Math.floor(Math.random() * candidates.length)];
+    const comment = sampleComments[Math.floor(Math.random() * sampleComments.length)];
+
+    document.querySelector('.cel-portrait').textContent = pick.initials;
+    document.querySelector('.cel-portrait').style.background = pick.color;
+    document.querySelector('.cel-kicker').textContent = '🎲 August 2026 Winner';
+    document.querySelector('.cel-headline').innerHTML = `Congrats,<br>${pick.name}!`;
+    document.querySelector('.cel-comment').textContent = comment;
+
+    const card = document.getElementById('celebrate-card');
+    card.classList.add('is-preview');
+    note.textContent = `Preview only — ${pick.name} picked at random from this month's candidates. Nothing written to the database.`;
+
+    spawnConfetti();
+    overlay.classList.add('open');
+  }
+  document.getElementById('btn-simulate-inline').addEventListener('click', simulateWinner);
+
+  // initial state
+  resetFrame();
+  timers.push(setTimeout(() => {
+    splash.classList.add('hidden');
+    votingPage.classList.add('in');
+  }, 900));
+</script>
+
+</body>
+</html>
