@@ -1,9 +1,10 @@
 name: Supabase Keep-Alive
 
 # Supabase pauses free projects after ~7 days without activity. Reads alone
-# did not prevent the pause warning, so this does a real write (idempotent
-# upsert of a sentinel row in celebration_seen) and fails the run on any
-# non-2xx response.
+# did not prevent the pause warning, so this does a real write (inserts one
+# sentinel row into celebration_seen) and fails the run on any non-2xx
+# response. INSERT only: the anon role has no UPDATE policy, so an upsert
+# on an existing row fails RLS.
 
 on:
   schedule:
@@ -21,7 +22,7 @@ jobs:
             -H "apikey: ${{ secrets.VITE_SUPABASE_ANON_KEY }}" \
             -H "Authorization: Bearer ${{ secrets.VITE_SUPABASE_ANON_KEY }}" \
             -H "Content-Type: application/json" \
-            -H "Prefer: resolution=merge-duplicates,return=minimal" \
-            "https://jkpgggdlpjhoojamnhrp.supabase.co/rest/v1/celebration_seen?on_conflict=token,winner_month" \
-            -d "{\"token\":\"_keepalive\",\"winner_month\":\"_keepalive\"}"
+            -H "Prefer: return=minimal" \
+            "https://jkpgggdlpjhoojamnhrp.supabase.co/rest/v1/celebration_seen" \
+            -d "{\"token\":\"_keepalive\",\"winner_month\":\"$(date -u +%Y%m%dT%H%M%SZ)\"}"
           echo "Keep-alive write complete"
